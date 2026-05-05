@@ -6,8 +6,8 @@ from datetime import datetime
 from data import (
     clean, gen_id, safe_update,
     load_farms, load_farmers, load_reports, load_crop_types, load_transactions,
-    get_farmer_credits, deduct_credit, run_ai_diagnosis,
-    CREDIT_PRICE_INR, FREE_CREDITS, BADGE_CLASS, STATUS_BADGE,
+    run_ai_diagnosis,
+    BADGE_CLASS, STATUS_BADGE,
     IDUKKI_VILLAGES
 )
 
@@ -54,9 +54,7 @@ def show_farmer():
                         st.session_state.farmer_name = clean(row.get("Name"))
                         st.session_state.farm_id     = clean(row.get("Farm_ID"))
                         st.session_state.farm_name   = clean(row.get("Farm_Name"))
-                        st.session_state.credits     = get_farmer_credits(
-                            st.session_state.farmer_id
-                        )
+
                         st.cache_data.clear()
                         st.rerun()
                 else:
@@ -142,14 +140,9 @@ def show_farmer():
                             merged_f = merged_f.fillna("").astype(str)
                             ok, err  = safe_update("Farmers", merged_f)
                         if ok:
-                            from data import add_credits
-                            add_credits(fid, r_name.strip(),
-                                        FREE_CREDITS, 0,
-                                        f"Welcome — {FREE_CREDITS} free credits")
                             st.markdown(f"""
                             <div class="ae-info">
                                 <strong>Registration successful.</strong><br>
-                                You have {FREE_CREDITS} free diagnostic credits.<br>
                                 Login with phone number: <strong>{r_phone.strip()}</strong>
                             </div>
                             """, unsafe_allow_html=True)
@@ -173,23 +166,10 @@ def show_farmer():
             farm_name = clean(fr.iloc[0].get("Farm_Name"), farm_name)
             crop_type = clean(fr.iloc[0].get("Crop_Type"), "Cardamom")
 
-    # Credit strip
-    credit_color = "#c62828" if credits == 0 else ("#f9a825" if credits <= 1 else "#6fcf8d")
-    st.markdown(f"""
-    <div class="credit-strip">
-        <div>
-            <span style="opacity:0.6;font-size:0.68rem;letter-spacing:0.08em;">
-                DIAGNOSTIC CREDITS
-            </span>
-        </div>
-        <div class="credit-count" style="color:{credit_color};">
-            {credits} credit{"s" if credits != 1 else ""} remaining
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    # Credits disabled — free access during launch phase
 
-    tab_submit, tab_reports, tab_credits = st.tabs([
-        "New Report", "My Reports", "Credits"
+    tab_submit, tab_reports = st.tabs([
+        "New Report", "My Reports"
     ])
 
     # ── SUBMIT ────────────────────────────────────────────────────────────
@@ -243,12 +223,7 @@ def show_farmer():
                 height=100
             )
 
-            st.markdown(f"""
-            <div class="ae-info" style="margin-top:0.8rem;">
-                Submitting this report will use <strong>1 credit</strong>.
-                You have <strong>{credits}</strong> remaining.
-            </div>
-            """, unsafe_allow_html=True)
+
 
             if st.button("Submit for Analysis", type="primary", key="submit_report"):
                 with st.spinner("Running AI analysis — please wait..."):
@@ -301,9 +276,6 @@ def show_farmer():
                         merged   = merged.fillna("").astype(str)
                         ok, err  = safe_update("Plant_Reports", merged)
                         if ok:
-                            deduct_credit(st.session_state.farmer_id,
-                                          st.session_state.farmer_name,
-                                          report_id)
                             st.session_state.last_report = {"id": report_id, **result}
                             st.cache_data.clear()
                             st.rerun()
@@ -486,121 +458,5 @@ def show_farmer():
                                 reviewed within 24 hours.
                             </div>
                             """, unsafe_allow_html=True)
-
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    # ── CREDITS ───────────────────────────────────────────────────────────
-    with tab_credits:
-        st.markdown('<div class="ae-content">', unsafe_allow_html=True)
-
-        current_credits = get_farmer_credits(st.session_state.farmer_id)
-
-        # Current balance
-        bal_color = "#c62828" if current_credits == 0 else (
-                    "#f9a825" if current_credits <= 2 else "#1a5c35")
-        st.markdown(f"""
-        <div style="text-align:center;padding:2rem 1rem;background:#fff;
-                    border:1px solid #e0e8e3;border-radius:4px;margin-bottom:1.2rem;">
-            <div style="font-size:0.65rem;font-weight:600;letter-spacing:0.12em;
-                        text-transform:uppercase;color:#8aaa96;margin-bottom:6px;">
-                Current Balance
-            </div>
-            <div style="font-family:'IBM Plex Mono',monospace;font-size:3rem;
-                        font-weight:500;color:{bal_color};line-height:1;">
-                {current_credits}
-            </div>
-            <div style="font-size:0.75rem;color:#8aaa96;margin-top:4px;">
-                diagnostic credit{"s" if current_credits != 1 else ""}
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        # Pricing (currently free tier note)
-        st.markdown("""
-        <div style="background:#e8f5ed;border:1px solid #a8d8b8;border-radius:4px;
-                    padding:0.9rem 1rem;margin-bottom:1.2rem;">
-            <div style="font-size:0.72rem;font-weight:600;letter-spacing:0.08em;
-                        text-transform:uppercase;color:#1a5c35;margin-bottom:4px;">
-                Currently Free
-            </div>
-            <div style="font-size:0.82rem;color:#1a3a26;line-height:1.5;">
-                AgriExpert is currently free during our launch phase.
-                Each new registration receives 3 free credits.
-                Additional credits will be available at
-                &#8377;99 per credit when paid tier launches.
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        # Pricing card (visible, purchase disabled in free phase)
-        st.markdown(f"""
-        <div class="price-card">
-            <div class="price-header">
-                <div class="price-plan">Diagnostic Credit</div>
-                <div class="price-amount">&#8377;{CREDIT_PRICE_INR}</div>
-                <div class="price-unit">per diagnostic report</div>
-            </div>
-            <div class="price-body">
-                <div class="price-feature">
-                    AI image analysis
-                    <span class="price-check">Included</span>
-                </div>
-                <div class="price-feature">
-                    Specialist review
-                    <span class="price-check">Included</span>
-                </div>
-                <div class="price-feature">
-                    Written recommendations
-                    <span class="price-check">Included</span>
-                </div>
-                <div class="price-feature">
-                    Medicine guidance
-                    <span class="price-check">Included</span>
-                </div>
-                <div class="price-feature">
-                    Report stored permanently
-                    <span class="price-check">Included</span>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        st.button("Purchase Credits — Coming Soon",
-                  key="buy_credits", disabled=True)
-
-        # Transaction history
-        txn_df = load_transactions()
-        if not txn_df.empty:
-            my_txns = txn_df[
-                txn_df["Farmer_ID"].astype(str) == str(st.session_state.farmer_id)
-            ].sort_values("Timestamp", ascending=False)
-
-            if not my_txns.empty:
-                st.markdown('<div class="ae-section">Transaction History</div>',
-                            unsafe_allow_html=True)
-                for _, t in my_txns.head(10).iterrows():
-                    txn_type = clean(t.get("Type"), "—")
-                    credits  = clean(t.get("Credits"), "0")
-                    ts       = clean(t.get("Timestamp"), "—")
-                    notes    = clean(t.get("Notes"), "—")
-                    color    = "#1a5c35" if txn_type == "Credit" else "#c25900"
-                    sign     = "+" if txn_type == "Credit" else ""
-                    st.markdown(f"""
-                    <div style="display:flex;justify-content:space-between;
-                                align-items:center;padding:0.6rem 0;
-                                border-bottom:1px solid #f0f4f1;font-size:0.82rem;">
-                        <div>
-                            <div style="color:#1a1a1a;font-weight:500;">{notes}</div>
-                            <div style="color:#8aaa96;font-size:0.68rem;
-                                        font-family:'IBM Plex Mono',monospace;">
-                                {ts}
-                            </div>
-                        </div>
-                        <div style="font-family:'IBM Plex Mono',monospace;
-                                    font-weight:600;color:{color};">
-                            {sign}{credits}
-                        </div>
-                    </div>
-                    """, unsafe_allow_html=True)
 
         st.markdown('</div>', unsafe_allow_html=True)
