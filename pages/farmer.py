@@ -155,7 +155,6 @@ def show_farmer():
 
     # ── Logged-in ─────────────────────────────────────────────────────────
     farms_df   = load_farms()
-    credits    = get_farmer_credits(st.session_state.farmer_id)
 
     # Resolve farm details
     farm_name  = clean(st.session_state.farm_name, "")
