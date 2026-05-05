@@ -99,11 +99,11 @@ def safe_update(worksheet_name, data, retries=3):
             spreadsheet = gc.open_by_key(sheet_id)
             ws          = spreadsheet.worksheet(worksheet_name)
 
-            # Convert DataFrame to list of lists (header + rows)
+            # Convert DataFrame — all values must be strings for gspread
             df = data.copy()
-
-            # Replace NaN/None with empty string for Sheets
             df = df.fillna("").astype(str)
+            # Replace 'nan' strings that astype(str) can produce
+            df = df.replace("nan", "").replace("None", "")
 
             values = [df.columns.tolist()] + df.values.tolist()
             ws.clear()
