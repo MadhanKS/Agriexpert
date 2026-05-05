@@ -443,6 +443,7 @@ for k, v in {
     "farm_name":   None,
     "sci_id":      None,
     "sci_name":    None,
+    "sci_phone":   None,
     "last_report": None,
     "credits":     0,
 }.items():
