@@ -138,10 +138,9 @@ def show_farmer():
                         }])
 
                         with st.spinner("Registering..."):
-                            ok, err = safe_update(
-                                "Farmers",
-                                pd.concat([farmers_df, new], ignore_index=True)
-                            )
+                            merged_f = pd.concat([farmers_df, new], ignore_index=True)
+                            merged_f = merged_f.fillna("").astype(str)
+                            ok, err  = safe_update("Farmers", merged_f)
                         if ok:
                             from data import add_credits
                             add_credits(fid, r_name.strip(),
@@ -297,10 +296,10 @@ def show_farmer():
                         }])
 
                         existing = load_reports()
-                        ok, err  = safe_update(
-                            "Plant_Reports",
-                            pd.concat([existing, new_rpt], ignore_index=True)
-                        )
+                        merged   = pd.concat([existing, new_rpt], ignore_index=True)
+                        # Convert all columns to string — gspread requires uniform types
+                        merged   = merged.fillna("").astype(str)
+                        ok, err  = safe_update("Plant_Reports", merged)
                         if ok:
                             deduct_credit(st.session_state.farmer_id,
                                           st.session_state.farmer_name,
