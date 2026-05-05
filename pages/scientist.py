@@ -424,10 +424,12 @@ def show_scientist():
                                             # Clean phone — remove spaces, +91, leading 0
                                             ph = farmer_phone.replace(" ","").replace("+91","").replace("-","")
                                             if ph.startswith("0"): ph = ph[1:]
+                                            farmer_link = f"{APP_URL}/?role=farmer&report={rid}"
                                             wa_msg = _q(
-                                                f"Your plant health report {rid} on AgriExpert "
-                                                f"has been reviewed by {st.session_state.sci_name}. "
-                                                f"Please open the AgriExpert app to see the recommendation."
+                                                f"Your plant health report on AgriExpert "
+                                                f"has been reviewed by {st.session_state.sci_name}."
+                                                f"\n\nReport ID: {rid}"
+                                                f"\n\nView recommendation here:\n{farmer_link}"
                                             )
                                             wa_url = f"https://wa.me/91{ph}?text={wa_msg}"
                                             st.session_state["pending_wa_url"]    = wa_url
