@@ -14,12 +14,12 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+Devanagari:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; }
 
 html, body, [class*="css"] {
-    font-family: 'IBM Plex Sans', 'Noto Sans Devanagari', sans-serif;
+    font-family: 'IBM Plex Sans', sans-serif;
     background: #f5f5f0;
     color: #1a1a1a;
     -webkit-tap-highlight-color: transparent;
@@ -67,11 +67,6 @@ html, body, [class*="css"] {
     line-height: 1.5;
     margin-bottom: 0.3rem;
 }
-.ae-subline-hi {
-    font-family: 'Noto Sans Devanagari', sans-serif;
-    font-size: 0.82rem;
-    color: #4a7a5a;
-}
 
 /* Divider line */
 .ae-divider {
@@ -111,12 +106,7 @@ html, body, [class*="css"] {
     color: #5a8a6e;
     font-weight: 300;
 }
-.ae-role-hi {
-    font-family: 'Noto Sans Devanagari', sans-serif;
-    font-size: 0.68rem;
-    color: #3a6a4e;
-    margin-top: 1px;
-}
+
 .ae-role-arrow {
     font-size: 0.9rem;
     color: #4a8a5e;
@@ -412,7 +402,7 @@ div[data-baseweb="select"] {
     margin-bottom: 0.8rem;
 }
 .ae-alert-hi {
-    font-family: 'Noto Sans Devanagari', sans-serif;
+    font-family: sans-serif;
     font-size: 0.75rem;
     color: #8a3030;
     margin-top: 2px;
@@ -462,62 +452,88 @@ for k, v in {
 # ── Landing ───────────────────────────────────────────────────────────────
 if st.session_state.role is None:
 
+    # Header block
     st.markdown("""
-    <div class="ae-landing">
-        <div class="ae-landing-top">
-            <div class="ae-wordmark">AgriExpert</div>
-            <div class="ae-headline">Crop health<br>diagnostics.<br><span>Expert advice.</span></div>
-            <div class="ae-divider"></div>
-            <div class="ae-subline">
-                Submit a photo. Get an AI pre-diagnosis.
-                Receive recommendations from certified agronomists.
-            </div>
-            <div class="ae-subline-hi">
-                फ़ोटो भेजें — AI जाँच करेगा — विशेषज्ञ सलाह पाएं
-            </div>
+    <div style="background:#0f2218;padding:3rem 2rem 2rem;min-height:45vh;">
+        <div style="font-size:0.72rem;font-weight:600;letter-spacing:0.2em;
+                    color:#5a9a6e;text-transform:uppercase;margin-bottom:0.75rem;">
+            AgriExpert
         </div>
-        <div class="ae-roles">
-            <div class="ae-role">
-                <div class="ae-role-left">
-                    <div class="ae-role-title">Farmer Portal</div>
-                    <div class="ae-role-sub">Submit plant photos · Track reports · Get recommendations</div>
-                    <div class="ae-role-hi">किसान पोर्टल</div>
-                    <div class="ae-credit-note">3 FREE credits on signup</div>
-                </div>
-                <div class="ae-role-arrow">—</div>
-            </div>
-            <div class="ae-role">
-                <div class="ae-role-left">
-                    <div class="ae-role-title">Scientist Portal</div>
-                    <div class="ae-role-sub">Review diagnostic queue · Issue recommendations</div>
-                    <div class="ae-role-hi">वैज्ञानिक पोर्टल</div>
-                </div>
-                <div class="ae-role-arrow">—</div>
-            </div>
-            <div class="ae-role">
-                <div class="ae-role-left">
-                    <div class="ae-role-title">Administrator</div>
-                    <div class="ae-role-sub">Manage platform · Farms · Scientists · Credits</div>
-                </div>
-                <div class="ae-role-arrow">—</div>
-            </div>
+        <div style="font-size:2.2rem;font-weight:700;color:#ffffff;
+                    line-height:1.15;letter-spacing:-0.5px;margin-bottom:0.5rem;">
+            Crop health<br>diagnostics.<br>
+            <span style="color:#6fcf8d;">Expert advice.</span>
+        </div>
+        <div style="height:1px;background:linear-gradient(90deg,#2a4a36,#1a3226);
+                    margin:1.5rem 0;"></div>
+        <div style="font-size:0.88rem;color:#7aab8a;font-weight:300;line-height:1.5;">
+            Submit a photo. Get an AI pre-diagnosis.<br>
+            Receive recommendations from certified agronomists.
+        </div>
+        <div style="font-family:'IBM Plex Sans',sans-serif;font-size:0.8rem;
+                    color:#4a7a5a;margin-top:4px;">
+             AI  
         </div>
     </div>
     """, unsafe_allow_html=True)
 
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        if st.button("Farmer", key="go_farmer", type="primary"):
-            st.session_state.role = "farmer"
-            st.rerun()
-    with c2:
-        if st.button("Scientist", key="go_scientist"):
-            st.session_state.role = "scientist"
-            st.rerun()
-    with c3:
-        if st.button("Admin", key="go_admin"):
-            st.session_state.role = "admin"
-            st.rerun()
+    # Role buttons — full width, clearly tappable
+    st.markdown("""
+    <div style="background:#0f2218;padding:0 1.5rem 0.5rem;">
+        <div style="font-size:0.62rem;font-weight:600;letter-spacing:0.12em;
+                    text-transform:uppercase;color:#3a6a4e;margin-bottom:0.6rem;">
+            Select your role
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Override button style for landing page — dark theme full-width cards
+    st.markdown("""
+    <style>
+    div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlockBorderWrapper"]:first-child .stButton > button,
+    .landing-btn .stButton > button {
+        background: #132018 !important;
+        color: #e8f0eb !important;
+        border: 1px solid #1e3628 !important;
+        border-radius: 3px !important;
+        min-height: 64px !important;
+        font-size: 0.92rem !important;
+        font-weight: 600 !important;
+        text-align: left !important;
+        padding: 0 1.2rem !important;
+        width: 100% !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    st.markdown('<div style="background:#0f2218;padding:0 1.5rem 2rem;">', unsafe_allow_html=True)
+
+    if st.button("Farmer Portal", key="go_farmer", type="primary",
+                  use_container_width=True):
+        st.session_state.role = "farmer"
+        st.rerun()
+
+    st.markdown('<div style="height:6px;"></div>', unsafe_allow_html=True)
+
+    if st.button("Scientist Portal", key="go_scientist",
+                  use_container_width=True):
+        st.session_state.role = "scientist"
+        st.rerun()
+
+    st.markdown('<div style="height:6px;"></div>', unsafe_allow_html=True)
+
+    if st.button("Administrator", key="go_admin", use_container_width=True):
+        st.session_state.role = "admin"
+        st.rerun()
+
+    st.markdown("""
+    </div>
+    <div style="background:#0f2218;padding:0.8rem 1.5rem 1.5rem;
+                font-size:0.65rem;color:#2a4a36;text-align:center;
+                font-family:'IBM Plex Mono',monospace;letter-spacing:0.08em;">
+        agriexpert.in  ·  Crop Diagnostics Platform  ·  Free during launch
+    </div>
+    """, unsafe_allow_html=True)
 
 elif st.session_state.role == "farmer":
     from pages.farmer import show_farmer
