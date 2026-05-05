@@ -7,7 +7,7 @@ from data import (
     clean, safe_update, load_scientists, load_reports,
     BADGE_CLASS, STATUS_BADGE
 )
-
+from cardamom_kb import get_disease_kb, get_seasonal_advisory
 
 def show_scientist():
     today = datetime.now().date()
@@ -191,6 +191,155 @@ def show_scientist():
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
+
+                # ── Knowledge Base Reference Panel ──────────────────────
+                try:
+                    from datetime import datetime as _dt
+                    _month = _dt.now().month
+                    _adv   = get_seasonal_advisory(_month)
+                    _kb_name, _kb = get_disease_kb(ai_cond)
+
+                    if _kb:
+                        with st.expander(
+                            f"Knowledge Base Reference — {_kb_name}",
+                            expanded=True
+                        ):
+                            # Seasonal context
+                            st.markdown(f"""
+                            <div style="background:#fff8e0;border-left:3px solid #f9a825;
+                                        padding:0.6rem 0.9rem;border-radius:0 4px 4px 0;
+                                        margin-bottom:0.8rem;">
+                                <div style="font-size:0.62rem;font-weight:600;
+                                            letter-spacing:0.1em;text-transform:uppercase;
+                                            color:#8a6000;margin-bottom:3px;">
+                                    Seasonal Risk — This Month
+                                </div>
+                                <div style="font-size:0.8rem;color:#5a4000;font-weight:500;">
+                                    {_adv.get('diseases','—')}
+                                </div>
+                            </div>
+                            """, unsafe_allow_html=True)
+
+                            # Disease profile
+                            _fields = [
+                                ("Causal Organism",    _kb.get("causal","—")),
+                                ("Parts Affected",     _kb.get("parts","—")),
+                                ("Peak Season",        _kb.get("season","—")),
+                                ("Conditions",         _kb.get("conditions","—")),
+                                ("Crop Loss",          _kb.get("severity","—")),
+                                ("Distribution",       _kb.get("distribution","—")),
+                            ]
+                            for label, val in _fields:
+                                if val and val != "—":
+                                    st.markdown(f"""
+                                    <div class="ae-card" style="margin-bottom:4px;padding:0.6rem 0.8rem;">
+                                        <div class="ae-card-label">{label}</div>
+                                        <div class="ae-card-value" style="font-size:0.82rem;">
+                                            {val}
+                                        </div>
+                                    </div>
+                                    """, unsafe_allow_html=True)
+
+                            # Symptoms
+                            _syms = _kb.get("symptoms",[])
+                            if _syms:
+                                st.markdown("""
+                                <div style="font-size:0.62rem;font-weight:600;
+                                            letter-spacing:0.1em;text-transform:uppercase;
+                                            color:#8aaa96;margin:0.6rem 0 0.3rem;">
+                                    Book-Referenced Symptoms
+                                </div>
+                                """, unsafe_allow_html=True)
+                                for s in _syms:
+                                    st.markdown(f"""
+                                    <div style="padding:3px 0 3px 0.8rem;font-size:0.8rem;
+                                                color:#2a2a2a;border-left:2px solid #c8d8cc;">
+                                        {s}
+                                    </div>
+                                    """, unsafe_allow_html=True)
+
+                            # Management
+                            _mgmt = _kb.get("management",{})
+                            _chem = _mgmt.get("chemical",[])
+                            _bio  = _mgmt.get("biological",[])
+                            _cult = _mgmt.get("cultural",[])
+
+                            if _chem:
+                                st.markdown("""
+                                <div style="font-size:0.62rem;font-weight:600;
+                                            letter-spacing:0.1em;text-transform:uppercase;
+                                            color:#1a5c35;margin:0.7rem 0 0.3rem;">
+                                    Chemical Management (Book Reference)
+                                </div>
+                                """, unsafe_allow_html=True)
+                                for m in _chem:
+                                    st.markdown(f"""
+                                    <div style="padding:3px 0 3px 0.8rem;font-size:0.8rem;
+                                                color:#1a3a26;border-left:2px solid #1a5c35;
+                                                margin-bottom:2px;">
+                                        {m}
+                                    </div>
+                                    """, unsafe_allow_html=True)
+
+                            if _bio:
+                                st.markdown("""
+                                <div style="font-size:0.62rem;font-weight:600;
+                                            letter-spacing:0.1em;text-transform:uppercase;
+                                            color:#1a5c9a;margin:0.7rem 0 0.3rem;">
+                                    Biological Control (Book Reference)
+                                </div>
+                                """, unsafe_allow_html=True)
+                                for m in _bio:
+                                    st.markdown(f"""
+                                    <div style="padding:3px 0 3px 0.8rem;font-size:0.8rem;
+                                                color:#1a3a6a;border-left:2px solid #1a5c9a;
+                                                margin-bottom:2px;">
+                                        {m}
+                                    </div>
+                                    """, unsafe_allow_html=True)
+
+                            if _cult:
+                                st.markdown("""
+                                <div style="font-size:0.62rem;font-weight:600;
+                                            letter-spacing:0.1em;text-transform:uppercase;
+                                            color:#8a3a00;margin:0.7rem 0 0.3rem;">
+                                    Cultural Practices
+                                </div>
+                                """, unsafe_allow_html=True)
+                                for m in _cult:
+                                    st.markdown(f"""
+                                    <div style="padding:3px 0 3px 0.8rem;font-size:0.8rem;
+                                                color:#5a2a00;border-left:2px solid #e65100;
+                                                margin-bottom:2px;">
+                                        {m}
+                                    </div>
+                                    """, unsafe_allow_html=True)
+
+                            # Sources
+                            _sources = _kb.get("sources",[])
+                            if _sources:
+                                st.markdown(f"""
+                                <div style="font-size:0.65rem;color:#8aaa96;
+                                            margin-top:0.6rem;font-style:italic;
+                                            border-top:1px solid #e8ede9;padding-top:0.4rem;">
+                                    Sources: {" · ".join(_sources)}
+                                </div>
+                                """, unsafe_allow_html=True)
+                    else:
+                        # No KB match — show seasonal advisory only
+                        with st.expander("Seasonal Advisory", expanded=False):
+                            st.markdown(f"""
+                            <div class="ae-card">
+                                <div class="ae-card-label">Current Month Disease Risk</div>
+                                <div class="ae-card-value">{_adv.get('diseases','—')}</div>
+                            </div>
+                            <div class="ae-card">
+                                <div class="ae-card-label">Recommended Activity</div>
+                                <div class="ae-card-value">{_adv.get('activity','—')}</div>
+                            </div>
+                            """, unsafe_allow_html=True)
+                except Exception as _kb_err:
+                    st.caption(f"KB reference unavailable: {_kb_err}")
 
                 # Response form
                 if allow_response and status not in ("Responded","Closed"):
