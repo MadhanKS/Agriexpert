@@ -443,7 +443,9 @@ for k, v in {
     "farm_name":   None,
     "sci_id":      None,
     "sci_name":    None,
-    "sci_phone":   None,
+    "sci_phone":         None,
+    "pending_wa_url":    "",
+    "pending_wa_farmer": "",
     "last_report": None,
     "credits":     0,
 }.items():
