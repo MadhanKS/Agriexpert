@@ -401,37 +401,39 @@ def show_scientist():
                                 if ok:
                                     st.success(f"Assessment submitted for {rid}")
                                     # WhatsApp notification to farmer
-                                    farmers_df = load_farmers()
-                                    farmer_phone = ""
-                                    if not farmers_df.empty and "Phone" in farmers_df.columns:
-                                        frow = farmers_df[
-                                            farmers_df["Farmer_Name" if "Farmer_Name" in farmers_df.columns else "Name"]
-                                            .astype(str).str.strip() == str(farmer).strip()
-                                        ] if "Farmer_Name" in farmers_df.columns else farmers_df[
-                                            farmers_df["Name"].astype(str).str.strip() == str(farmer).strip()
-                                        ]
-                                        if not frow.empty:
-                                            farmer_phone = clean(frow.iloc[0].get("Phone",""))
-                                    if farmer_phone and farmer_phone != "—":
-                                        from urllib.parse import quote
-                                        wa_msg = (
-                                            f"Your plant health report {rid} has been reviewed by "
-                                            f"{st.session_state.sci_name} on AgriExpert. "
-                                            f"Please open the app to see the recommendation."
-                                        )
-                                        wa_url = f"https://wa.me/91{farmer_phone.replace(' ','').replace('+91','')}?text={quote(wa_msg)}"
-                                        st.markdown(f"""
-                                        <div style="margin-top:0.8rem;">
-                                            <a href="{wa_url}" target="_blank"
-                                               style="display:block;background:#25D366;
-                                                      color:white;text-align:center;
-                                                      padding:0.75rem;border-radius:4px;
-                                                      font-weight:600;font-size:0.88rem;
-                                                      text-decoration:none;">
-                                                Notify Farmer on WhatsApp
-                                            </a>
-                                        </div>
-                                        """, unsafe_allow_html=True)
+                                    # Look up farmer phone from Farmers sheet by name
+                                    try:
+                                        farmers_df   = load_farmers()
+                                        farmer_phone = ""
+                                        if not farmers_df.empty:
+                                            # Try matching by Name column
+                                            for col in ["Name","Farmer_Name"]:
+                                                if col in farmers_df.columns:
+                                                    frow = farmers_df[
+                                                        farmers_df[col].astype(str)
+                                                        .str.strip().str.lower()
+                                                        == str(farmer).strip().lower()
+                                                    ]
+                                                    if not frow.empty:
+                                                        farmer_phone = clean(
+                                                            frow.iloc[0].get("Phone",""), ""
+                                                        )
+                                                        break
+                                        if farmer_phone and farmer_phone not in ("—",""):
+                                            from urllib.parse import quote as _q
+                                            # Clean phone — remove spaces, +91, leading 0
+                                            ph = farmer_phone.replace(" ","").replace("+91","").replace("-","")
+                                            if ph.startswith("0"): ph = ph[1:]
+                                            wa_msg = _q(
+                                                f"Your plant health report {rid} on AgriExpert "
+                                                f"has been reviewed by {st.session_state.sci_name}. "
+                                                f"Please open the AgriExpert app to see the recommendation."
+                                            )
+                                            wa_url = f"https://wa.me/91{ph}?text={wa_msg}"
+                                            st.session_state["pending_wa_url"]    = wa_url
+                                            st.session_state["pending_wa_farmer"] = farmer
+                                    except Exception as _we:
+                                        pass  # WhatsApp is optional — don't block on error
                                     st.cache_data.clear()
                                     st.rerun()
                                 else:
@@ -450,6 +452,26 @@ def show_scientist():
                         <br><span style="color:#2a5a36;">{recs_d[:150]}{"..." if len(recs_d)>150 else ""}</span>
                     </div>
                     """, unsafe_allow_html=True)
+
+                # Show pending WhatsApp button if this is the just-responded report
+                pending_url    = st.session_state.get("pending_wa_url","")
+                pending_farmer = st.session_state.get("pending_wa_farmer","")
+                if pending_url and pending_farmer == farmer:
+                    st.markdown(f"""
+                    <div style="margin-top:0.6rem;">
+                        <a href="{pending_url}" target="_blank"
+                           style="display:block;background:#25D366;color:white;
+                                  text-align:center;padding:0.8rem;border-radius:4px;
+                                  font-weight:600;font-size:0.9rem;text-decoration:none;">
+                            Notify {pending_farmer} on WhatsApp
+                        </a>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    if st.button("Done — dismiss notification",
+                                 key=f"dismiss_wa_{rid}"):
+                        st.session_state["pending_wa_url"]    = ""
+                        st.session_state["pending_wa_farmer"] = ""
+                        st.rerun()
 
     with tab_pending:
         if st.button("Refresh Queue", key="sci_ref_p"):
