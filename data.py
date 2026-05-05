@@ -7,33 +7,30 @@ import base64, hashlib, uuid, json, time
 from streamlit_gsheets import GSheetsConnection
 import gspread
 
-conn      = st.connection("gsheets", type=GSheetsConnection)
-SHEET_URL = st.secrets["gsheets"]["spreadsheet"]
+conn = st.connection("gsheets", type=GSheetsConnection)
 
-# ── Direct gspread client for reliable writes ─────────────────────────────
-@st.cache_resource
-def get_gspread_client():
-    """
-    Build a gspread client using service_account_from_dict —
-    the modern recommended approach for gspread 6+
-    """
-    creds_dict = {
+def _gs():
+    """Return an authenticated gspread client and open spreadsheet. Always fresh."""
+    creds = {
         "type":                        st.secrets["gsheets"]["type"],
         "project_id":                  st.secrets["gsheets"]["project_id"],
         "private_key_id":              st.secrets["gsheets"]["private_key_id"],
         "private_key":                 st.secrets["gsheets"]["private_key"],
         "client_email":                st.secrets["gsheets"]["client_email"],
         "client_id":                   st.secrets["gsheets"]["client_id"],
-        "auth_uri":                    st.secrets["gsheets"].get("auth_uri",
-                                           "https://accounts.google.com/o/oauth2/auth"),
-        "token_uri":                   st.secrets["gsheets"].get("token_uri",
-                                           "https://oauth2.googleapis.com/token"),
-        "auth_provider_x509_cert_url": st.secrets["gsheets"].get("auth_provider_x509_cert_url",
-                                           "https://www.googleapis.com/oauth2/v1/certs"),
+        "auth_uri":                    "https://accounts.google.com/o/oauth2/auth",
+        "token_uri":                   "https://oauth2.googleapis.com/token",
+        "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
         "client_x509_cert_url":        st.secrets["gsheets"].get("client_x509_cert_url", ""),
-        "universe_domain":             st.secrets["gsheets"].get("universe_domain", "googleapis.com"),
+        "universe_domain":             "googleapis.com",
     }
-    return gspread.service_account_from_dict(creds_dict)
+    gc  = gspread.service_account_from_dict(creds)
+    url = st.secrets["gsheets"]["spreadsheet"]
+    import re as _re
+    m   = _re.search(r'/spreadsheets/d/([a-zA-Z0-9-_]+)', url)
+    if not m:
+        raise ValueError("Invalid spreadsheet URL in secrets.")
+    return gc.open_by_key(m.group(1))
 
 # ── Credit pricing ────────────────────────────────────────────────────────
 CREDIT_PRICE_INR  = 99          # ₹99 per diagnostic credit
@@ -89,9 +86,7 @@ def safe_update(worksheet_name, data, retries=3):
     """
     for attempt in range(retries):
         try:
-            gc          = get_gspread_client()
-            spreadsheet = gc.open_by_key(_get_sheet_id())
-            ws          = spreadsheet.worksheet(worksheet_name)
+            ws = _gs().worksheet(worksheet_name)
 
             # Convert DataFrame — all values must be strings for gspread
             df = data.copy()
@@ -134,20 +129,9 @@ def gen_id(prefix, seed=""):
     return prefix + "-" + hashlib.md5(raw.encode()).hexdigest()[:8].upper()
 
 # ── Shared sheet reader using gspread (same auth as writes) ───────────────
-def _get_sheet_id():
-    """Extract Google Sheet ID from secrets URL at call time."""
-    import re as _re
-    url = st.secrets["gsheets"]["spreadsheet"]
-    _match = _re.search(r'/spreadsheets/d/([a-zA-Z0-9-_]+)', url)
-    if not _match:
-        raise ValueError(f"Cannot extract sheet ID from URL. Check secrets.toml.")
-    return _match.group(1)
-
 def read_sheet(worksheet_name):
     """Read a worksheet using gspread directly."""
-    gc      = get_gspread_client()
-    sheet   = gc.open_by_key(_get_sheet_id())
-    ws      = sheet.worksheet(worksheet_name)
+    ws      = _gs().worksheet(worksheet_name)
     records = ws.get_all_values()
     if not records:
         return pd.DataFrame()
