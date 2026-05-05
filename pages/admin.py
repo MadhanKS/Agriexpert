@@ -7,11 +7,10 @@ from data import (
     clean, gen_id, safe_update, add_credits,
     load_farms, load_farmers, load_scientists, load_reports,
     load_transactions, load_crop_types,
-    CREDIT_PRICE_INR, FREE_CREDITS
+    CREDIT_PRICE_INR, FREE_CREDITS, IDUKKI_VILLAGES
 )
 
 ADMIN_PIN = st.secrets.get("admin", {}).get("pin", "admin123")
-
 
 def show_admin():
     if st.button("Back to Home", key="admin_back"):
@@ -147,8 +146,11 @@ def show_admin():
                 f1, f2 = st.columns(2)
                 fn     = f1.text_input("Farm Name")
                 owner  = f2.text_input("Owner Name")
-                loc    = f1.text_input("Village / Location")
-                dist   = f2.text_input("District")
+                loc    = f1.selectbox(
+                    "Village",
+                    ["Select village"] + IDUKKI_VILLAGES
+                )
+                dist   = f2.text_input("District", value="Idukki")
                 state  = f1.text_input("State", value="Kerala")
                 crop   = f2.selectbox("Primary Crop", crop_types)
                 acre   = f1.number_input("Acreage (acres)", min_value=0.0,
@@ -158,6 +160,8 @@ def show_admin():
                 if st.form_submit_button("Register Farm", type="primary"):
                     if not fn.strip() or not owner.strip():
                         st.error("Farm name and owner name are required.")
+                    elif loc == "Select village":
+                        st.error("Please select the village.")
                     else:
                         new_farm = pd.DataFrame([{
                             "Farm_ID":       gen_id("FARM", fn),
