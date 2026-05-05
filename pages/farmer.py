@@ -337,14 +337,16 @@ def show_farmer():
 
             # WhatsApp notification button for farmer to notify scientist
             if sci_ph and sci_ph != "—":
-                from urllib.parse import quote
-                wa_msg = (
-                    f"Hello, I have submitted a plant health report on AgriExpert."
-                    f"%0AReport ID: {rid}"
-                    f"%0AFarm: {farm_name}"
-                    f"%0APlease review at your earliest convenience."
+                from urllib.parse import quote as _q
+                sci_link = f"{APP_URL}/?role=scientist&report={rid}"
+                wa_msg   = _q(
+                    f"Hello, a new plant health report has been submitted on AgriExpert."
+                    f"\n\nReport ID: {rid}"
+                    f"\nFarm: {farm_name}"
+                    f"\nFarmer: {st.session_state.farmer_name}"
+                    f"\n\nReview here:\n{sci_link}"
                 )
-                wa_url = f"https://wa.me/91{sci_ph.replace(' ','').replace('+91','')}?text={wa_msg}"
+                wa_url = f"https://wa.me/91{sci_ph.replace(' ','').replace('+91','').replace('-','')}?text={wa_msg}"
                 st.markdown(f"""
                 <div style="margin-top:0.8rem;">
                     <a href="{wa_url}" target="_blank"
@@ -387,6 +389,7 @@ def show_farmer():
             if my.empty:
                 st.info("You have not submitted any reports yet.")
             else:
+                deep_rid = st.session_state.get("deep_report_id","")
                 for _, rpt in my.iterrows():
                     rid     = clean(rpt.get("Report_ID"), "—")
                     ai_cond = clean(rpt.get("AI_Condition"), "—")
@@ -397,8 +400,10 @@ def show_farmer():
                                "Medium":"#f9a825","Low":"#1a5c35"}.get(ai_sev,"#6a8a76")
                     badge   = BADGE_CLASS.get(ai_sev,"low")
                     st_badge= STATUS_BADGE.get(status,"pending")
+                    auto_open = (deep_rid == rid)
 
-                    with st.expander(f"{rid}  —  {ai_cond}  [{status}]"):
+                    with st.expander(f"{rid}  —  {ai_cond}  [{status}]",
+                                     expanded=auto_open):
                         st.markdown(f"""
                         <div style="display:flex;justify-content:space-between;
                                     align-items:flex-start;margin-bottom:0.6rem;">
