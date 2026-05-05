@@ -93,9 +93,15 @@ def safe_update(worksheet_name, data, retries=3):
     """
     for attempt in range(retries):
         try:
-            gc         = get_gspread_client()
-            spreadsheet= gc.open_by_url(SHEET_URL)
-            ws         = spreadsheet.worksheet(worksheet_name)
+            gc  = get_gspread_client()
+            # Extract sheet ID from URL — works regardless of URL format
+            import re as _re
+            _match = _re.search(r'/spreadsheets/d/([a-zA-Z0-9-_]+)', SHEET_URL)
+            if not _match:
+                return False, "Invalid spreadsheet URL in secrets."
+            sheet_id    = _match.group(1)
+            spreadsheet = gc.open_by_key(sheet_id)
+            ws          = spreadsheet.worksheet(worksheet_name)
 
             # Convert DataFrame to list of lists (header + rows)
             df = data.copy()
