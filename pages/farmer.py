@@ -275,73 +275,37 @@ def show_farmer():
 
         # Show last result
         if st.session_state.last_report:
-            r  = st.session_state.last_report
-            sc = {
-                "Critical":"#c62828","High":"#e65100",
-                "Medium":"#f9a825","Low":"#1a5c35"
-            }.get(r.get("severity","Low"), "#6a8a76")
-            badge = BADGE_CLASS.get(r.get("severity","Low"),"low")
-
+            r = st.session_state.last_report
             st.markdown(f"""
             <div class="ae-sep"></div>
 
-            <div style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;
-                        color:#8aaa96;letter-spacing:0.1em;margin-bottom:4px;">
-                REPORT ID
-            </div>
-            <div style="font-family:'IBM Plex Mono',monospace;font-size:1.4rem;
-                        font-weight:500;color:#0f2218;letter-spacing:1px;
-                        margin-bottom:1.2rem;">
-                {r.get('id','—')}
-            </div>
-
-            <div style="border:1px solid #e0e8e3;border-radius:4px;overflow:hidden;
-                        margin-bottom:1rem;">
-                <div style="background:{sc};padding:0.75rem 1rem;">
-                    <div style="font-size:0.65rem;font-weight:600;letter-spacing:0.1em;
-                                text-transform:uppercase;color:rgba(255,255,255,0.7);
-                                margin-bottom:3px;">
-                        AI ASSESSMENT — {r.get('confidence','')} CONFIDENCE
-                    </div>
-                    <div style="font-size:1.05rem;font-weight:600;color:#fff;">
-                        {r.get('condition','—')}
-                    </div>
+            <div style="background:#e8f5ed;border:1px solid #a8d8b8;border-radius:4px;
+                        padding:1.2rem 1.1rem;text-align:center;">
+                <div style="font-size:0.65rem;font-weight:600;letter-spacing:0.12em;
+                            text-transform:uppercase;color:#2e7d32;margin-bottom:0.5rem;">
+                    Report Submitted
                 </div>
-                <div style="padding:0.85rem 1rem;border-bottom:1px solid #f0f4f1;">
-                    <div style="font-size:0.62rem;font-weight:600;letter-spacing:0.1em;
-                                text-transform:uppercase;color:#8aaa96;margin-bottom:4px;">
-                        OBSERVED
-                    </div>
-                    <div style="font-size:0.85rem;color:#2a2a2a;line-height:1.5;">
-                        {r.get('observed','—')}
-                    </div>
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:1.5rem;
+                            font-weight:500;color:#0f2218;letter-spacing:2px;
+                            margin-bottom:0.5rem;">
+                    {r.get('id','—')}
                 </div>
-                <div style="padding:0.85rem 1rem;border-bottom:1px solid #f0f4f1;
-                            background:#fafcfb;">
-                    <div style="font-size:0.62rem;font-weight:600;letter-spacing:0.1em;
-                                text-transform:uppercase;color:#8aaa96;margin-bottom:4px;">
-                        IMMEDIATE ACTION
-                    </div>
-                    <div style="font-size:0.9rem;font-weight:600;color:{sc};
-                                line-height:1.4;">
-                        {r.get('action','—')}
-                    </div>
-                </div>
-                <div style="padding:0.85rem 1rem;">
-                    <div style="font-size:0.62rem;font-weight:600;letter-spacing:0.1em;
-                                text-transform:uppercase;color:#8aaa96;margin-bottom:4px;">
-                        AI TREATMENT SUGGESTION
-                    </div>
-                    <div style="font-size:0.85rem;color:#1a3a26;font-weight:500;
-                                line-height:1.5;">
-                        {r.get('treatment','—')}
-                    </div>
+                <div style="font-size:0.82rem;color:#3a5a46;line-height:1.5;">
+                    Your report has been received and assigned to a specialist.<br>
+                    You will be notified once a recommendation is ready.
                 </div>
             </div>
 
-            <div class="ae-info">
-                Report submitted to specialist queue. Check <strong>My Reports</strong>
-                for expert recommendations.
+            <div style="background:#fff;border:1px solid #e0e8e3;border-radius:4px;
+                        padding:0.9rem 1rem;margin-top:0.8rem;">
+                <div style="font-size:0.65rem;font-weight:600;letter-spacing:0.1em;
+                            text-transform:uppercase;color:#8aaa96;margin-bottom:0.4rem;">
+                    Next Step
+                </div>
+                <div style="font-size:0.85rem;color:#1a1a1a;">
+                    Check <strong>My Reports</strong> tab for the specialist
+                    recommendation — typically within 24 hours.
+                </div>
             </div>
             """, unsafe_allow_html=True)
 
@@ -396,14 +360,8 @@ def show_farmer():
                         </div>
                         """, unsafe_allow_html=True)
 
-                        ai_treat = clean(rpt.get("AI_Treatment"), "")
-                        if ai_treat and ai_treat != "—":
-                            st.markdown(f"""
-                            <div class="ae-card">
-                                <div class="ae-card-label">AI Treatment Suggestion</div>
-                                <div class="ae-card-value">{ai_treat}</div>
-                            </div>
-                            """, unsafe_allow_html=True)
+                        # AI findings are not shown to farmer —
+                        # they are internal reference for the scientist only
 
                         # Scientist response
                         if status in ("Responded", "Closed"):
