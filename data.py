@@ -139,14 +139,32 @@ def gen_id(prefix, seed=""):
     raw = f"{prefix}{seed}{datetime.now().isoformat()}{uuid.uuid4()}"
     return prefix + "-" + hashlib.md5(raw.encode()).hexdigest()[:8].upper()
 
+# ── Shared sheet reader using gspread (same auth as writes) ───────────────
+def read_sheet(worksheet_name):
+    """
+    Read a worksheet using gspread directly — same client as writes.
+    Returns a DataFrame. Raises exception on failure (do not silent-catch).
+    """
+    import re as _re
+    gc        = get_gspread_client()
+    _match    = _re.search(r'/spreadsheets/d/([a-zA-Z0-9-_]+)', SHEET_URL)
+    sheet_id  = _match.group(1)
+    sheet     = gc.open_by_key(sheet_id)
+    ws        = sheet.worksheet(worksheet_name)
+    records   = ws.get_all_values()
+    if not records:
+        return pd.DataFrame()
+    headers = [h.strip() for h in records[0]]
+    rows    = records[1:]
+    return pd.DataFrame(rows, columns=headers)
+
 # ── Loaders ───────────────────────────────────────────────────────────────
 @st.cache_data(ttl=600)
 def load_farms():
     try:
-        df = conn.read(spreadsheet=SHEET_URL, worksheet="Farms", ttl=600)
-        df.columns = df.columns.str.strip()
-        return df
-    except:
+        return read_sheet("Farms")
+    except Exception as e:
+        st.error(f"Could not load farms: {e}")
         return pd.DataFrame(columns=[
             "Farm_ID","Farm_Name","Location","District","State",
             "Crop_Type","Acreage","Owner_Name","Phone","Registered_At"
@@ -155,10 +173,9 @@ def load_farms():
 @st.cache_data(ttl=300)
 def load_farmers():
     try:
-        df = conn.read(spreadsheet=SHEET_URL, worksheet="Farmers", ttl=300)
-        df.columns = df.columns.str.strip()
-        return df
-    except:
+        return read_sheet("Farmers")
+    except Exception as e:
+        st.error(f"Could not load farmers: {e}")
         return pd.DataFrame(columns=[
             "Farmer_ID","Name","Phone","Farm_ID","Farm_Name",
             "Language","Credits","Registered_At"
@@ -167,10 +184,9 @@ def load_farmers():
 @st.cache_data(ttl=300)
 def load_scientists():
     try:
-        df = conn.read(spreadsheet=SHEET_URL, worksheet="Scientists", ttl=300)
-        df.columns = df.columns.str.strip()
-        return df
-    except:
+        return read_sheet("Scientists")
+    except Exception as e:
+        st.error(f"Could not load scientists: {e}")
         return pd.DataFrame(columns=[
             "Sci_ID","Name","Qualification","Specialization",
             "Crops","Institution","Phone","PIN","Is_Active",
@@ -180,10 +196,9 @@ def load_scientists():
 @st.cache_data(ttl=30)
 def load_reports():
     try:
-        df = conn.read(spreadsheet=SHEET_URL, worksheet="Plant_Reports", ttl=30)
-        df.columns = df.columns.str.strip()
-        return df
-    except:
+        return read_sheet("Plant_Reports")
+    except Exception as e:
+        st.error(f"Could not load reports: {e}")
         return pd.DataFrame(columns=[
             "Report_ID","Submitted_At","Farmer_ID","Farmer_Name",
             "Farm_ID","Farm_Name","Crop_Type","Plant_Part","Symptoms",
@@ -197,10 +212,9 @@ def load_reports():
 @st.cache_data(ttl=60)
 def load_transactions():
     try:
-        df = conn.read(spreadsheet=SHEET_URL, worksheet="Credit_Transactions", ttl=60)
-        df.columns = df.columns.str.strip()
-        return df
-    except:
+        return read_sheet("Credit_Transactions")
+    except Exception as e:
+        st.error(f"Could not load transactions: {e}")
         return pd.DataFrame(columns=[
             "Txn_ID","Timestamp","Farmer_ID","Farmer_Name",
             "Type","Credits","Amount_INR","Notes","Report_ID"
@@ -209,8 +223,7 @@ def load_transactions():
 @st.cache_data(ttl=3600)
 def load_crop_types():
     try:
-        df = conn.read(spreadsheet=SHEET_URL, worksheet="Crop_Types", ttl=3600)
-        df.columns = df.columns.str.strip()
+        df = read_sheet("Crop_Types")
         if not df.empty and "Crop_Name" in df.columns:
             return df["Crop_Name"].dropna().tolist()
     except: pass
