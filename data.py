@@ -90,8 +90,7 @@ def safe_update(worksheet_name, data, retries=3):
     for attempt in range(retries):
         try:
             gc          = get_gspread_client()
-            sheet_id    = _extract_sheet_id(SHEET_URL)
-            spreadsheet = gc.open_by_key(sheet_id)
+            spreadsheet = gc.open_by_key(_get_sheet_id())
             ws          = spreadsheet.worksheet(worksheet_name)
 
             # Convert DataFrame — all values must be strings for gspread
@@ -135,24 +134,21 @@ def gen_id(prefix, seed=""):
     return prefix + "-" + hashlib.md5(raw.encode()).hexdigest()[:8].upper()
 
 # ── Shared sheet reader using gspread (same auth as writes) ───────────────
-def _extract_sheet_id(url):
-    """Extract Google Sheet ID from any URL format."""
+def _get_sheet_id():
+    """Extract Google Sheet ID from secrets URL at call time."""
     import re as _re
+    url = st.secrets["gsheets"]["spreadsheet"]
     _match = _re.search(r'/spreadsheets/d/([a-zA-Z0-9-_]+)', url)
     if not _match:
-        raise ValueError(f"Cannot extract sheet ID from URL: {url[:80]}")
+        raise ValueError(f"Cannot extract sheet ID from URL. Check secrets.toml.")
     return _match.group(1)
 
 def read_sheet(worksheet_name):
-    """
-    Read a worksheet using gspread directly — same client as writes.
-    Returns a DataFrame. Raises exception on failure (do not silent-catch).
-    """
-    gc       = get_gspread_client()
-    sheet_id = _extract_sheet_id(SHEET_URL)
-    sheet    = gc.open_by_key(sheet_id)
-    ws       = sheet.worksheet(worksheet_name)
-    records  = ws.get_all_values()
+    """Read a worksheet using gspread directly."""
+    gc      = get_gspread_client()
+    sheet   = gc.open_by_key(_get_sheet_id())
+    ws      = sheet.worksheet(worksheet_name)
+    records = ws.get_all_values()
     if not records:
         return pd.DataFrame()
     headers = [h.strip() for h in records[0]]
