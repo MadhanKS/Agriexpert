@@ -3,11 +3,41 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-import base64, hashlib, uuid
+import base64, hashlib, uuid, json, time
 from streamlit_gsheets import GSheetsConnection
+import gspread
+from google.oauth2.service_account import Credentials
 
 conn      = st.connection("gsheets", type=GSheetsConnection)
 SHEET_URL = st.secrets["gsheets"]["spreadsheet"]
+
+# ── Direct gspread client for reliable writes ─────────────────────────────
+@st.cache_resource
+def get_gspread_client():
+    """
+    Build a gspread client directly from secrets.
+    st-gsheets-connection handles reads fine but writes need this for reliability.
+    """
+    creds_dict = {
+        "type":                        st.secrets["gsheets"]["type"],
+        "project_id":                  st.secrets["gsheets"]["project_id"],
+        "private_key_id":              st.secrets["gsheets"]["private_key_id"],
+        "private_key":                 st.secrets["gsheets"]["private_key"],
+        "client_email":                st.secrets["gsheets"]["client_email"],
+        "client_id":                   st.secrets["gsheets"]["client_id"],
+        "auth_uri":                    st.secrets["gsheets"].get("auth_uri","https://accounts.google.com/o/oauth2/auth"),
+        "token_uri":                   st.secrets["gsheets"].get("token_uri","https://oauth2.googleapis.com/token"),
+        "auth_provider_x509_cert_url": st.secrets["gsheets"].get("auth_provider_x509_cert_url","https://www.googleapis.com/oauth2/v1/certs"),
+        "client_x509_cert_url":        st.secrets["gsheets"].get("client_x509_cert_url",""),
+        "universe_domain":             st.secrets["gsheets"].get("universe_domain","googleapis.com"),
+    }
+    scopes = [
+        "https://spreadsheets.google.com/feeds",
+        "https://www.googleapis.com/auth/spreadsheets",
+        "https://www.googleapis.com/auth/drive",
+    ]
+    creds  = Credentials.from_service_account_info(creds_dict, scopes=scopes)
+    return gspread.authorize(creds)
 
 # ── Credit pricing ────────────────────────────────────────────────────────
 CREDIT_PRICE_INR  = 99          # ₹99 per diagnostic credit
@@ -56,26 +86,44 @@ STATUS_BADGE = {
 }
 
 # ── Utilities ─────────────────────────────────────────────────────────────
-def safe_update(worksheet, data, retries=3):
-    import time, gspread
+def safe_update(worksheet_name, data, retries=3):
+    """
+    Write a DataFrame to a Google Sheet worksheet using gspread directly.
+    Replaces the full sheet content (header + all rows).
+    """
     for attempt in range(retries):
         try:
-            conn.update(spreadsheet=SHEET_URL, worksheet=worksheet, data=data)
+            gc         = get_gspread_client()
+            spreadsheet= gc.open_by_url(SHEET_URL)
+            ws         = spreadsheet.worksheet(worksheet_name)
+
+            # Convert DataFrame to list of lists (header + rows)
+            df = data.copy()
+
+            # Replace NaN/None with empty string for Sheets
+            df = df.fillna("").astype(str)
+
+            values = [df.columns.tolist()] + df.values.tolist()
+            ws.clear()
+            ws.update(values, value_input_option="RAW")
             return True, ""
+
         except gspread.exceptions.APIError as e:
             msg = str(e)
             if attempt < retries - 1:
                 time.sleep(2 ** attempt * 2)
                 continue
-            if "403" in msg: return False, "Permission denied."
-            if "429" in msg: return False, "API quota exceeded. Wait 1 minute."
-            return False, msg[:200]
+            if "403" in msg or "PERMISSION_DENIED" in msg:
+                return False, "Permission denied — check service account has Editor access."
+            if "429" in msg or "RESOURCE_EXHAUSTED" in msg:
+                return False, "API quota exceeded. Wait 1 minute and retry."
+            return False, f"Sheets API error: {msg[:200]}"
         except Exception as e:
             if attempt < retries - 1:
                 time.sleep(2)
                 continue
-            return False, str(e)[:200]
-    return False, "Failed."
+            return False, f"Error: {str(e)[:200]}"
+    return False, "Failed after all retries."
 
 def clean(val, fallback="—"):
     if val is None: return fallback
