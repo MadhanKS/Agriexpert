@@ -1,7 +1,6 @@
 streamlit
 pandas
 st-gsheets-connection
-gspread
-google-auth
+gspread>=6.0.0
 openpyxl
 anthropic
