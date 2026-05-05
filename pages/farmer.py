@@ -7,9 +7,9 @@ from data import (
     clean, gen_id, safe_update,
     load_farms, load_farmers, load_reports, load_crop_types, load_transactions,
     get_farmer_credits, deduct_credit, run_ai_diagnosis,
-    CREDIT_PRICE_INR, FREE_CREDITS, BADGE_CLASS, STATUS_BADGE
+    CREDIT_PRICE_INR, FREE_CREDITS, BADGE_CLASS, STATUS_BADGE,
+    IDUKKI_VILLAGES
 )
-
 
 def show_farmer():
     today = datetime.now().date()
@@ -76,12 +76,22 @@ def show_farmer():
                     r_name  = st.text_input("Full Name")
                     r_phone = st.text_input("Phone Number")
                     r_farm  = st.selectbox("Your Farm", farm_opts)
+                    r_village = st.selectbox(
+                        "Village / Location *",
+                        ["Select your village"] + IDUKKI_VILLAGES
+                    )
                     r_lang  = st.selectbox("Preferred Language", [
-                        "English", "Hindi", "Malayalam", "Tamil", "Kannada"
+                        "English", "Tamil", "Malayalam"
                     ])
                     if st.form_submit_button("Register", type="primary"):
-                        if not r_name.strip() or not r_phone.strip():
-                            st.error("Name and phone number are required.")
+                        if not r_name.strip():
+                            st.error("Full name is required.")
+                        elif not r_phone.strip():
+                            st.error("Phone number is mandatory.")
+                        elif len(r_phone.strip()) != 10 or not r_phone.strip().isdigit():
+                            st.error("Enter a valid 10-digit phone number.")
+                        elif r_village == "Select your village":
+                            st.error("Please select your village.")
                         else:
                             if not farmers_df.empty and "Phone" in farmers_df.columns:
                                 dup = farmers_df[
@@ -99,6 +109,7 @@ def show_farmer():
                                 "Farmer_ID":    fid,
                                 "Name":         r_name.strip(),
                                 "Phone":        r_phone.strip(),
+                                "Village":      r_village,
                                 "Farm_ID":      farm_id,
                                 "Farm_Name":    r_farm,
                                 "Language":     r_lang,
@@ -181,7 +192,6 @@ def show_farmer():
                 You have no diagnostic credits remaining. Each report costs
                 1 credit (&#8377;{CREDIT_PRICE_INR}). Purchase credits below
                 in the Credits tab.
-                <div class="ae-alert-hi">आपके पास कोई क्रेडिट नहीं है।</div>
             </div>
             """, unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
