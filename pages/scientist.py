@@ -5,7 +5,7 @@ import pandas as pd
 from datetime import datetime
 from data import (
     clean, safe_update, load_scientists, load_reports,
-    BADGE_CLASS, STATUS_BADGE
+    load_farmers, BADGE_CLASS, STATUS_BADGE
 )
 from cardamom_kb import get_disease_kb, get_seasonal_advisory
 
@@ -400,6 +400,38 @@ def show_scientist():
                                 ok, err = safe_update("Plant_Reports", existing)
                                 if ok:
                                     st.success(f"Assessment submitted for {rid}")
+                                    # WhatsApp notification to farmer
+                                    farmers_df = load_farmers()
+                                    farmer_phone = ""
+                                    if not farmers_df.empty and "Phone" in farmers_df.columns:
+                                        frow = farmers_df[
+                                            farmers_df["Farmer_Name" if "Farmer_Name" in farmers_df.columns else "Name"]
+                                            .astype(str).str.strip() == str(farmer).strip()
+                                        ] if "Farmer_Name" in farmers_df.columns else farmers_df[
+                                            farmers_df["Name"].astype(str).str.strip() == str(farmer).strip()
+                                        ]
+                                        if not frow.empty:
+                                            farmer_phone = clean(frow.iloc[0].get("Phone",""))
+                                    if farmer_phone and farmer_phone != "—":
+                                        from urllib.parse import quote
+                                        wa_msg = (
+                                            f"Your plant health report {rid} has been reviewed by "
+                                            f"{st.session_state.sci_name} on AgriExpert. "
+                                            f"Please open the app to see the recommendation."
+                                        )
+                                        wa_url = f"https://wa.me/91{farmer_phone.replace(' ','').replace('+91','')}?text={quote(wa_msg)}"
+                                        st.markdown(f"""
+                                        <div style="margin-top:0.8rem;">
+                                            <a href="{wa_url}" target="_blank"
+                                               style="display:block;background:#25D366;
+                                                      color:white;text-align:center;
+                                                      padding:0.75rem;border-radius:4px;
+                                                      font-weight:600;font-size:0.88rem;
+                                                      text-decoration:none;">
+                                                Notify Farmer on WhatsApp
+                                            </a>
+                                        </div>
+                                        """, unsafe_allow_html=True)
                                     st.cache_data.clear()
                                     st.rerun()
                                 else:
