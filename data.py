@@ -19,6 +19,33 @@ CROP_TYPES_DEFAULT = [
     "Ginger", "Turmeric", "Vanilla", "Arecanut", "Other"
 ]
 
+# Idukki District — Villages & Towns
+# Source: Kerala local body directory — Idukki district
+IDUKKI_VILLAGES = [
+    # Devikulam Taluk
+    "Munnar", "Devikulam", "Rajamala", "Marayoor", "Kanthalloor",
+    "Anachal", "Pallivasal", "Vattavada", "Chinnakkanal", "Udumbanchola",
+    "Pampadum Shola", "Mankulam", "Chinnakanal",
+    # Idukki Taluk
+    "Idukki", "Cheruthoni", "Thankamany", "Kattappana", "Kumily",
+    "Vandiperiyar", "Upputhara", "Senapathy", "Murikkady", "Gandhinagar",
+    "Elappara", "Moolamattom", "Nedumkandam", "Karimannoor",
+    "Adimali", "Peermade", "Anakara",
+    # Thodupuzha Taluk
+    "Thodupuzha", "Kumaramangalam", "Kaliyar", "Vazhathoppu",
+    "Pala", "Arakkulam", "Irattayar", "Vazhikadavu", "Manakkad",
+    "Karimkunnam", "Nellimala", "Koovappally",
+    # Udumbanchola Taluk
+    "Azhutha", "Kuthumkal", "Pampadumpara", "Santhanpara",
+    "Keezhillam", "Puliyanmala",
+    # Peerumade Taluk
+    "Peerumedu", "Painavu", "Thrikkovilvattom", "Vazhavara",
+    "Mariyapuram", "Kallar", "Vagamon",
+    # Other / Mixed
+    "Iyyappancoil", "Kanjikuzhy", "Vaikom", "Other",
+]
+IDUKKI_VILLAGES = sorted(list(set(IDUKKI_VILLAGES)))
+
 SEV_LEVELS  = ["Critical", "High", "Medium", "Low", "None"]
 BADGE_CLASS = {
     "Critical":"critical","High":"high","Medium":"medium","Low":"low","None":"low"
@@ -417,3 +444,14 @@ def run_ai_diagnosis(image_bytes, media_type, crop, farm,
         }]
     )
     return parse_ai(resp.content[0].text)
+
+
+# ── UI Translations ──────────────────────────────────────────────────────
+UI_TRANSLATIONS = {'Tamil': {'Farmer Portal': 'விவசாயி போர்டல்', 'Scientist Portal': 'விஞ்ஞானி போர்டல்', 'Administrator': 'நிர்வாகி', 'Submit plant photos': 'தாவர புகைப்படங்களை சமர்ப்பிக்கவும்', 'Track reports': 'அறிக்கைகளை கண்காணிக்கவும்', 'Get recommendations': 'பரிந்துரைகளை பெறவும்', 'Login': 'உள்நுழை', 'Register': 'பதிவு செய்க', 'Phone Number': 'தொலைபேசி எண்', 'Full Name': 'முழு பெயர்', 'Your Farm': 'உங்கள் பண்ணை', 'New Report': 'புதிய அறிக்கை', 'My Reports': 'என் அறிக்கைகள்', 'Credits': 'கிரெடிட்கள்', 'Submit for Analysis': 'பகுப்பாய்வுக்கு சமர்ப்பிக்கவும்', 'Pending Review': 'நிலுவையில் உள்ள மதிப்பாய்வு', 'Completed': 'முடிந்தது', 'Refresh': 'புதுப்பிக்கவும்', 'Back to Home': 'முகப்புக்கு திரும்பு', '3 FREE credits on signup': 'பதிவில் 3 இலவச கிரெடிட்கள்'}, 'Malayalam': {'Farmer Portal': 'കർഷക പോർട്ടൽ', 'Scientist Portal': 'ശാസ്ത്രജ്ഞ പോർട്ടൽ', 'Administrator': 'അഡ്മിനിസ്ട്രേറ്റർ', 'Submit plant photos': 'സസ്യ ഫോട്ടോകൾ സമർപ്പിക്കുക', 'Track reports': 'റിപ്പോർട്ടുകൾ ട്രാക്ക് ചെയ്യുക', 'Get recommendations': 'ശുപാർശകൾ നേടുക', 'Login': 'ലോഗിൻ', 'Register': 'രജിസ്റ്റർ ചെയ്യുക', 'Phone Number': 'ഫോൺ നമ്പർ', 'Full Name': 'പൂർണ്ണ നാമം', 'Your Farm': 'നിങ്ങളുടെ ഫാം', 'New Report': 'പുതിയ റിപ്പോർട്ട്', 'My Reports': 'എന്റെ റിപ്പോർട്ടുകൾ', 'Credits': 'ക്രെഡിറ്റുകൾ', 'Submit for Analysis': 'വിശകലനത്തിനായി സമർപ്പിക്കുക', 'Pending Review': 'അവലോകനം ബാക്കി', 'Completed': 'പൂർത്തിയായി', 'Refresh': 'പുതുക്കുക', 'Back to Home': 'ഹോമിലേക്ക് തിരിച്ചു', '3 FREE credits on signup': 'സൈൻ അപ്പിൽ 3 സൗജന്യ ക്രെഡിറ്റുകൾ'}}
+
+def t(key, lang='English'):
+    """Translate a UI key to the farmer's preferred language.
+    Falls back to English if translation not found."""
+    if lang == 'English' or not lang:
+        return key
+    return UI_TRANSLATIONS.get(lang, {}).get(key, key)
