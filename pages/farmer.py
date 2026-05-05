@@ -186,46 +186,71 @@ def show_farmer():
         """, unsafe_allow_html=True)
 
         st.markdown("""
-        <div class="ae-section">Photograph</div>
+        <div class="ae-section">Photographs</div>
         """, unsafe_allow_html=True)
 
-        img_src = st.radio("Source", ["Camera", "Upload from Gallery"],
-                           horizontal=True, label_visibility="collapsed")
-        img = (st.camera_input(" ", label_visibility="collapsed")
-               if img_src == "Camera"
-               else st.file_uploader(
-                   "Select image", type=["jpg","jpeg","png","webp"],
-                   label_visibility="visible"
-               ))
+        st.markdown("""
+        <div style="font-size:0.78rem;color:#6a8a76;margin-bottom:0.5rem;">
+            Upload one or more photos of the affected plant part.
+            Multiple angles help the specialist make a better assessment.
+        </div>
+        """, unsafe_allow_html=True)
 
-        if img:
+        # Multiple file upload — no camera toggle needed, works on mobile
+        imgs = st.file_uploader(
+            "Select photos (tap + to add more)",
+            type=["jpg","jpeg","png","webp"],
+            accept_multiple_files=True,
+            label_visibility="collapsed"
+        )
+
+        if imgs:
+            st.markdown(f"""
+            <div style="font-size:0.75rem;color:#1a5c35;font-weight:600;
+                        margin-bottom:0.5rem;">
+                {len(imgs)} photo{"s" if len(imgs)>1 else ""} selected
+            </div>
+            """, unsafe_allow_html=True)
+
             st.markdown('<div class="ae-section">Plant Details</div>',
                         unsafe_allow_html=True)
             plant_part = st.text_input(
                 "Plant Part Affected",
                 placeholder="e.g. Leaf / Capsule / Stem / Root"
             )
+            obs_date = st.date_input(
+                "When did you first notice this?",
+                value=today,
+                max_value=today,
+                format="DD/MM/YYYY"
+            )
             symptoms = st.text_area(
                 "Describe What You See",
-                placeholder="When did you first notice this? Has it spread? Any recent weather events or chemical applications?",
+                placeholder="Has it spread? Any recent weather events or chemical applications?",
                 height=100
             )
 
-
-
             if st.button("Submit for Analysis", type="primary", key="submit_report"):
-                with st.spinner("Running AI analysis — please wait..."):
+                with st.spinner("Analysing — please wait..."):
                     try:
-                        img_bytes  = img.getvalue()
-                        fname      = getattr(img, 'name', 'img.jpg').lower()
-                        media_type = ("image/png" if fname.endswith('.png')
-                                      else "image/webp" if fname.endswith('.webp')
-                                      else "image/jpeg")
+                        # Use first image for AI analysis; store count for scientist
+                        primary_img = imgs[0]
+                        img_bytes   = primary_img.getvalue()
+                        fname       = getattr(primary_img, 'name', 'img.jpg').lower()
+                        media_type  = ("image/png" if fname.endswith('.png')
+                                       else "image/webp" if fname.endswith('.webp')
+                                       else "image/jpeg")
+                        photo_note  = f"{len(imgs)} photo(s) submitted. First shown to AI."
+
+                        full_symptoms = symptoms or ""
+                        if len(imgs) > 1:
+                            full_symptoms += f" [Farmer submitted {len(imgs)} photos]"
+                        full_symptoms += f" First noticed: {obs_date}"
 
                         result    = run_ai_diagnosis(
                             img_bytes, media_type, crop_type,
                             farm_name, st.session_state.farmer_name,
-                            plant_part, symptoms, today.month
+                            plant_part, full_symptoms, today.month
                         )
                         report_id = gen_id("RPT",
                                           f"{st.session_state.farmer_id}{today}")
@@ -239,7 +264,7 @@ def show_farmer():
                             "Farm_Name":       farm_name,
                             "Crop_Type":       crop_type,
                             "Plant_Part":      plant_part or "",
-                            "Symptoms":        symptoms or "",
+                            "Symptoms":        full_symptoms,
                             "AI_Condition":    result["condition"],
                             "AI_Severity":     result["severity"],
                             "AI_Confidence":   result["confidence"],
@@ -265,6 +290,17 @@ def show_farmer():
                         ok, err  = safe_update("Plant_Reports", merged)
                         if ok:
                             st.session_state.last_report = {"id": report_id, **result}
+                            # Store scientist phone for WhatsApp notification
+                            scientists_df = load_scientists()
+                            if not scientists_df.empty and "Phone" in scientists_df.columns:
+                                active_sci = scientists_df[
+                                    scientists_df["Is_Active"].astype(str).str.lower()
+                                    .isin(["true","1","yes",""])
+                                ]
+                                if not active_sci.empty:
+                                    st.session_state.sci_phone = clean(
+                                        active_sci.iloc[0].get("Phone","")
+                                    )
                             st.cache_data.clear()
                             st.rerun()
                         else:
@@ -275,10 +311,13 @@ def show_farmer():
 
         # Show last result
         if st.session_state.last_report:
-            r = st.session_state.last_report
+            r        = st.session_state.last_report
+            rid      = r.get('id','—')
+            sci_ph   = st.session_state.get("sci_phone","")
+            farmer_n = st.session_state.farmer_name
+
             st.markdown(f"""
             <div class="ae-sep"></div>
-
             <div style="background:#e8f5ed;border:1px solid #a8d8b8;border-radius:4px;
                         padding:1.2rem 1.1rem;text-align:center;">
                 <div style="font-size:0.65rem;font-weight:600;letter-spacing:0.12em;
@@ -288,26 +327,44 @@ def show_farmer():
                 <div style="font-family:'IBM Plex Mono',monospace;font-size:1.5rem;
                             font-weight:500;color:#0f2218;letter-spacing:2px;
                             margin-bottom:0.5rem;">
-                    {r.get('id','—')}
+                    {rid}
                 </div>
                 <div style="font-size:0.82rem;color:#3a5a46;line-height:1.5;">
-                    Your report has been received and assigned to a specialist.<br>
-                    You will be notified once a recommendation is ready.
-                </div>
-            </div>
-
-            <div style="background:#fff;border:1px solid #e0e8e3;border-radius:4px;
-                        padding:0.9rem 1rem;margin-top:0.8rem;">
-                <div style="font-size:0.65rem;font-weight:600;letter-spacing:0.1em;
-                            text-transform:uppercase;color:#8aaa96;margin-bottom:0.4rem;">
-                    Next Step
-                </div>
-                <div style="font-size:0.85rem;color:#1a1a1a;">
-                    Check <strong>My Reports</strong> tab for the specialist
-                    recommendation — typically within 24 hours.
+                    Your report has been received. Tap below to notify your specialist.
                 </div>
             </div>
             """, unsafe_allow_html=True)
+
+            # WhatsApp notification button for farmer to notify scientist
+            if sci_ph and sci_ph != "—":
+                from urllib.parse import quote
+                wa_msg = (
+                    f"Hello, I have submitted a plant health report on AgriExpert."
+                    f"%0AReport ID: {rid}"
+                    f"%0AFarm: {farm_name}"
+                    f"%0APlease review at your earliest convenience."
+                )
+                wa_url = f"https://wa.me/91{sci_ph.replace(' ','').replace('+91','')}?text={wa_msg}"
+                st.markdown(f"""
+                <div style="margin-top:0.8rem;">
+                    <a href="{wa_url}" target="_blank"
+                       style="display:block;background:#25D366;color:white;
+                              text-align:center;padding:0.85rem;border-radius:4px;
+                              font-weight:600;font-size:0.9rem;text-decoration:none;
+                              letter-spacing:0.02em;">
+                        Notify Specialist on WhatsApp
+                    </a>
+                </div>
+                """, unsafe_allow_html=True)
+            else:
+                st.markdown("""
+                <div style="background:#fff;border:1px solid #e0e8e3;border-radius:4px;
+                            padding:0.9rem 1rem;margin-top:0.8rem;font-size:0.85rem;
+                            color:#1a1a1a;">
+                    <strong>Next:</strong> Share your Report ID with your specialist
+                    and check <strong>My Reports</strong> for the response.
+                </div>
+                """, unsafe_allow_html=True)
 
         st.markdown('</div>', unsafe_allow_html=True)
 
