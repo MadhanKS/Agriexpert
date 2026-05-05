@@ -1,6 +1,6 @@
 streamlit
 pandas
 st-gsheets-connection
-gspread>=6.0.0
+gspread
 openpyxl
 anthropic
