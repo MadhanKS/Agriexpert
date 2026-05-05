@@ -1,341 +1,505 @@
 """
-Farmster — AI-Powered Crop Diagnostic Platform
-===================================================
-Standalone, multi-tenant, crop-agnostic diagnostic platform.
-Any farmer submits a photo → AI pre-diagnoses → Scientist reviews → Farmer gets recommendation.
-
-Architecture:
-  - Streamlit multipage app (pages/ folder)
-  - Google Sheets backend (6 worksheets)
-  - Claude Vision API for AI diagnosis
-  - Zero dependency on any farm-specific app
-
-Sheets required (one Google Spreadsheet):
-  Farms | Farmers | Scientists | Plant_Reports | Crop_Types | App_Config
+AgriExpert — Crop Diagnostic Platform
+Professional AI-powered plant health diagnostics connecting farmers with scientists.
 """
 
 import streamlit as st
 
 st.set_page_config(
-    page_title="Farmster",
-    page_icon="🌿",
+    page_title="AgriExpert",
+    page_icon="https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/leaflet.svg",
     layout="centered",
     initial_sidebar_state="collapsed",
 )
 
-# ── Global CSS ────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=Noto+Sans+Devanagari:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+Devanagari:wght@400;500;600&display=swap');
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; }
 
 html, body, [class*="css"] {
-    font-family: 'DM Sans', 'Noto Sans Devanagari', sans-serif;
-    background: #0d1f0f;
-    color: #e8f5e9;
+    font-family: 'IBM Plex Sans', 'Noto Sans Devanagari', sans-serif;
+    background: #f5f5f0;
+    color: #1a1a1a;
     -webkit-tap-highlight-color: transparent;
 }
-
 #MainMenu, footer, header { visibility: hidden; }
-
 .block-container {
     padding: 0 !important;
     max-width: 480px !important;
     margin: 0 auto !important;
 }
 
-/* ── Hero ── */
-.fd-hero {
-    background: linear-gradient(160deg, #0a1a0c 0%, #1b4020 50%, #0d2e10 100%);
+/* ── Landing ── */
+.ae-landing {
+    background: #0f2218;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    padding: 0;
+}
+.ae-landing-top {
+    padding: 3.5rem 2.5rem 2rem;
+    flex: 1;
+}
+.ae-wordmark {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    color: #5a9a6e;
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+}
+.ae-headline {
+    font-size: 2.4rem;
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1.15;
+    letter-spacing: -0.5px;
+    margin-bottom: 0.5rem;
+}
+.ae-headline span { color: #6fcf8d; }
+.ae-subline {
+    font-size: 0.9rem;
+    color: #7aab8a;
+    font-weight: 300;
+    line-height: 1.5;
+    margin-bottom: 0.3rem;
+}
+.ae-subline-hi {
+    font-family: 'Noto Sans Devanagari', sans-serif;
+    font-size: 0.82rem;
+    color: #4a7a5a;
+}
+
+/* Divider line */
+.ae-divider {
+    height: 1px;
+    background: linear-gradient(90deg, #2a4a36 0%, #1a3226 100%);
+    margin: 2rem 0;
+}
+
+/* ── Role selector ── */
+.ae-roles {
+    padding: 0 2.5rem 3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.ae-role {
+    border: 1px solid #1e3628;
+    border-radius: 4px;
+    padding: 1.1rem 1.4rem;
+    display: flex;
+    justify-content: space-between;
     align-items: center;
-    justify-content: center;
-    padding: 3rem 2rem;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: #132018;
 }
-.fd-hero::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(ellipse at 30% 20%, rgba(76,175,80,0.15) 0%, transparent 60%),
-                radial-gradient(ellipse at 70% 80%, rgba(27,94,32,0.2) 0%, transparent 50%);
+.ae-role:hover { border-color: #4a8a5e; background: #1a2e22; }
+.ae-role-left {}
+.ae-role-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #e8f0eb;
+    margin-bottom: 2px;
 }
-.fd-logo {
-    font-family: 'Syne', sans-serif;
-    font-size: 3rem;
-    font-weight: 800;
-    color: #fff;
-    letter-spacing: -1px;
-    line-height: 1;
-    position: relative;
-    z-index: 1;
-}
-.fd-logo span { color: #69f0ae; }
-.fd-tagline {
-    font-size: 1rem;
-    color: #a5d6a7;
-    margin-top: 0.5rem;
-    position: relative;
-    z-index: 1;
+.ae-role-sub {
+    font-size: 0.72rem;
+    color: #5a8a6e;
     font-weight: 300;
 }
-.fd-hi {
+.ae-role-hi {
     font-family: 'Noto Sans Devanagari', sans-serif;
-    font-size: 0.85rem;
-    color: #4caf50;
-    margin-top: 0.25rem;
-    position: relative;
-    z-index: 1;
-}
-
-/* ── Role cards ── */
-.role-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    width: 100%;
-    max-width: 340px;
-    margin: 2.5rem auto 0;
-    position: relative;
-    z-index: 1;
-}
-.role-card {
-    background: rgba(255,255,255,0.05);
-    border: 1.5px solid rgba(105,240,174,0.2);
-    border-radius: 20px;
-    padding: 1.25rem 1.5rem;
-    cursor: pointer;
-    transition: all 0.2s;
-    text-align: left;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    backdrop-filter: blur(10px);
-}
-.role-card:hover {
-    background: rgba(105,240,174,0.1);
-    border-color: rgba(105,240,174,0.5);
-    transform: translateY(-2px);
-}
-.role-icon {
-    font-size: 2rem;
-    flex-shrink: 0;
-}
-.role-en {
-    font-family: 'Syne', sans-serif;
-    font-size: 1.05rem;
-    font-weight: 700;
-    color: #fff;
-}
-.role-sub {
-    font-size: 0.78rem;
-    color: #81c784;
-    margin-top: 2px;
-}
-.role-hi {
-    font-family: 'Noto Sans Devanagari', sans-serif;
-    font-size: 0.72rem;
-    color: #4caf50;
+    font-size: 0.68rem;
+    color: #3a6a4e;
     margin-top: 1px;
 }
-.role-arrow {
-    margin-left: auto;
-    color: #69f0ae;
-    font-size: 1.2rem;
-    flex-shrink: 0;
+.ae-role-arrow {
+    font-size: 0.9rem;
+    color: #4a8a5e;
+    font-family: 'IBM Plex Mono', monospace;
 }
 
-/* ── Inner pages ── */
-.fd-page {
-    background: #f0f7ee;
-    min-height: 100vh;
-    padding-bottom: 2rem;
-}
-.fd-header {
-    background: linear-gradient(135deg, #1b5e20, #2e7d32);
-    padding: 1rem 1.2rem 1.3rem;
-    border-radius: 0 0 20px 20px;
-    margin-bottom: 1.2rem;
-    box-shadow: 0 6px 24px rgba(27,94,32,0.3);
-}
-.fd-header-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 1.5rem;
-    font-weight: 800;
-    color: #fff;
-}
-.fd-header-sub {
-    font-size: 0.8rem;
-    color: rgba(255,255,255,0.75);
-    margin-top: 2px;
-}
-.fd-header-back {
-    font-size: 0.75rem;
-    color: #a5d6a7;
-    margin-bottom: 0.3rem;
-    cursor: pointer;
-}
-
-/* ── Cards ── */
-.fd-card {
-    background: #fff;
-    border-radius: 16px;
-    padding: 1rem 1.1rem;
-    margin: 0 0.75rem 0.7rem;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.07);
-}
-.fd-card-green { border-left: 5px solid #43a047; }
-.fd-card-amber { border-left: 5px solid #fbc02d; }
-.fd-card-red   { border-left: 5px solid #c62828; }
-.fd-card-blue  { border-left: 5px solid #1565c0; }
-
-/* ── Status pill ── */
-.status-pill {
+/* Credit badge on role */
+.ae-credit-note {
+    font-size: 0.65rem;
+    font-family: 'IBM Plex Mono', monospace;
+    background: #1e3a28;
+    color: #6fcf8d;
+    border: 1px solid #2a5038;
+    border-radius: 2px;
+    padding: 1px 5px;
+    margin-top: 3px;
     display: inline-block;
-    border-radius: 12px;
-    padding: 3px 10px;
-    font-size: 0.68rem;
-    font-weight: 700;
 }
+
+/* ── Inner pages header ── */
+.ae-header {
+    background: #0f2218;
+    padding: 1.1rem 1.4rem 1.3rem;
+    border-bottom: 1px solid #1e3628;
+}
+.ae-header-nav {
+    font-size: 0.72rem;
+    color: #4a7a5a;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+}
+.ae-header-nav:hover { color: #6fcf8d; }
+.ae-header-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: -0.3px;
+}
+.ae-header-sub {
+    font-size: 0.75rem;
+    color: #5a8a6e;
+    margin-top: 2px;
+    font-weight: 300;
+}
+
+/* ── Content wrapper ── */
+.ae-content { padding: 1.2rem 1.4rem; }
 
 /* ── Buttons ── */
 .stButton > button {
-    border-radius: 14px !important;
-    min-height: 52px !important;
-    font-size: 1rem !important;
-    font-weight: 700 !important;
-    font-family: 'DM Sans', sans-serif !important;
+    border-radius: 3px !important;
+    min-height: 48px !important;
+    font-size: 0.88rem !important;
+    font-weight: 600 !important;
+    font-family: 'IBM Plex Sans', sans-serif !important;
+    letter-spacing: 0.02em !important;
     border: none !important;
     width: 100% !important;
     transition: all 0.15s !important;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.1) !important;
 }
 .stButton > button[kind="primary"] {
-    background: linear-gradient(135deg, #1b5e20, #2e7d32) !important;
+    background: #1a5c35 !important;
     color: white !important;
 }
+.stButton > button[kind="primary"]:hover {
+    background: #145028 !important;
+}
 .stButton > button[kind="secondary"] {
-    background: rgba(27,94,32,0.08) !important;
-    color: #1b5e20 !important;
-    border: 1.5px solid #a5d6a7 !important;
+    background: transparent !important;
+    color: #1a5c35 !important;
+    border: 1px solid #c8d8cc !important;
 }
 
 /* ── Form inputs ── */
 .stTextInput label, .stTextArea label, .stSelectbox label,
-.stRadio label, .stNumberInput label, .stDateInput label {
-    font-size: 0.88rem !important;
-    font-weight: 600 !important;
-    color: #1b5e20 !important;
+.stRadio label, .stNumberInput label, .stDateInput label,
+.stFileUploader label {
+    font-size: 0.8rem !important;
+    font-weight: 500 !important;
+    color: #3a5a46 !important;
+    letter-spacing: 0.03em !important;
+    text-transform: uppercase !important;
+}
+div[data-baseweb="input"] input,
+div[data-baseweb="textarea"] textarea {
+    border-radius: 3px !important;
+    border-color: #d0d8d4 !important;
+    font-family: 'IBM Plex Sans', sans-serif !important;
+}
+div[data-baseweb="select"] {
+    border-radius: 3px !important;
 }
 
 /* ── Tabs ── */
 .stTabs [data-baseweb="tab-list"] {
-    background: #fff;
-    border-radius: 12px;
-    padding: 4px;
-    gap: 4px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    margin: 0 0.75rem 0.8rem;
+    background: #ffffff;
+    border-radius: 0;
+    padding: 0;
+    gap: 0;
+    border-bottom: 2px solid #e8ede9;
+    margin: 0 0 1.2rem;
 }
 .stTabs [data-baseweb="tab"] {
-    border-radius: 9px !important;
-    font-weight: 700 !important;
-    font-size: 0.82rem !important;
-    font-family: 'DM Sans', sans-serif !important;
+    border-radius: 0 !important;
+    font-weight: 500 !important;
+    font-size: 0.8rem !important;
+    font-family: 'IBM Plex Sans', sans-serif !important;
+    letter-spacing: 0.04em !important;
+    padding: 0.75rem 1rem !important;
+    color: #6a8a76 !important;
+    border-bottom: 2px solid transparent !important;
+    margin-bottom: -2px !important;
 }
 .stTabs [aria-selected="true"] {
-    background: linear-gradient(135deg, #1b5e20, #2e7d32) !important;
-    color: white !important;
+    background: transparent !important;
+    color: #0f2218 !important;
+    border-bottom: 2px solid #1a5c35 !important;
+    font-weight: 600 !important;
 }
 
-/* ── Metric ── */
-.fd-metric {
-    background: #fff;
-    border-radius: 14px;
-    padding: 1rem;
-    text-align: center;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    border-top: 4px solid #43a047;
+/* ── Cards ── */
+.ae-card {
+    background: #ffffff;
+    border: 1px solid #e0e8e3;
+    border-radius: 4px;
+    padding: 1rem 1.1rem;
+    margin-bottom: 0.6rem;
 }
-.fd-metric-val { font-family: 'Syne', sans-serif; font-size: 1.8rem; font-weight: 800; color: #1b5e20; }
-.fd-metric-label { font-size: 0.72rem; color: #9e9e9e; margin-top: 2px; font-weight: 600; }
+.ae-card-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #8aaa96;
+    margin-bottom: 4px;
+}
+.ae-card-value {
+    font-size: 0.88rem;
+    color: #1a1a1a;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+/* ── Status badges ── */
+.badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 2px;
+    font-family: 'IBM Plex Mono', monospace;
+}
+.badge-pending  { background:#fff3e0; color:#c25900; border:1px solid #f0c888; }
+.badge-review   { background:#e8f0fe; color:#1a5c9a; border:1px solid #b8d0f0; }
+.badge-done     { background:#e8f5ed; color:#1a6635; border:1px solid #a8d8b8; }
+.badge-critical { background:#fde8e8; color:#9a1a1a; border:1px solid #f0a8a8; }
+.badge-high     { background:#fff0e0; color:#8a3a00; border:1px solid #f0c8a0; }
+.badge-medium   { background:#fffbe0; color:#7a6000; border:1px solid #e8d888; }
+.badge-low      { background:#e8f5ed; color:#1a6635; border:1px solid #a8d8b8; }
+
+/* ── Severity bar ── */
+.sev-bar {
+    height: 3px;
+    border-radius: 0;
+    margin: 0.5rem 0;
+}
 
 /* ── Report card ── */
-.report-card {
+.rpt-card {
     background: #fff;
-    border-radius: 14px;
-    margin: 0 0.75rem 0.6rem;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-    border: 1.5px solid #e8f5e9;
+    border: 1px solid #e0e8e3;
+    border-left: 3px solid #1a5c35;
+    border-radius: 0 4px 4px 0;
+    padding: 0.9rem 1rem;
+    margin-bottom: 0.5rem;
 }
-.report-header {
-    padding: 0.7rem 1rem;
+.rpt-card.critical { border-left-color: #c62828; }
+.rpt-card.high     { border-left-color: #e65100; }
+.rpt-card.medium   { border-left-color: #f9a825; }
+.rpt-card.low      { border-left-color: #2e7d32; }
+
+/* ── Metric strip ── */
+.ae-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: #e0e8e3;
+    border: 1px solid #e0e8e3;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 1.2rem;
+}
+.ae-metric {
+    background: #fff;
+    padding: 0.9rem 0.8rem;
+    text-align: center;
+}
+.ae-metric-val {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.6rem;
+    font-weight: 500;
+    color: #0f2218;
+    line-height: 1;
+}
+.ae-metric-label {
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #8aaa96;
+    margin-top: 4px;
+}
+
+/* ── Credit display ── */
+.credit-strip {
+    background: #0f2218;
+    color: #6fcf8d;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    padding: 0.6rem 1rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid #f5f5f5;
+    border-bottom: 1px solid #1e3628;
 }
-.report-body { padding: 0.7rem 1rem; }
+.credit-count {
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+/* ── Pricing card ── */
+.price-card {
+    background: #fff;
+    border: 1px solid #e0e8e3;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+}
+.price-header {
+    background: #0f2218;
+    padding: 1rem 1.2rem;
+    color: #fff;
+}
+.price-plan {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #5a9a6e;
+    margin-bottom: 3px;
+}
+.price-amount {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 2rem;
+    font-weight: 500;
+    color: #fff;
+    line-height: 1;
+}
+.price-unit {
+    font-size: 0.75rem;
+    color: #6a9a78;
+    margin-top: 3px;
+}
+.price-body { padding: 1rem 1.2rem; }
+.price-feature {
+    font-size: 0.82rem;
+    color: #3a5a46;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid #f0f4f1;
+    display: flex;
+    justify-content: space-between;
+}
+.price-check { color: #1a5c35; font-weight: 600; }
+
+/* ── Divider ── */
+.ae-sep {
+    height: 1px;
+    background: #e8ede9;
+    margin: 1.2rem 0;
+}
+
+/* ── Alert box ── */
+.ae-alert {
+    border-left: 3px solid #c62828;
+    background: #fde8e8;
+    padding: 0.75rem 1rem;
+    border-radius: 0 3px 3px 0;
+    font-size: 0.82rem;
+    color: #5a1515;
+    margin-bottom: 0.8rem;
+}
+.ae-alert-hi {
+    font-family: 'Noto Sans Devanagari', sans-serif;
+    font-size: 0.75rem;
+    color: #8a3030;
+    margin-top: 2px;
+}
+.ae-info {
+    border-left: 3px solid #1a5c35;
+    background: #e8f5ed;
+    padding: 0.75rem 1rem;
+    border-radius: 0 3px 3px 0;
+    font-size: 0.82rem;
+    color: #0f3320;
+    margin-bottom: 0.8rem;
+}
+
+/* ── Section title ── */
+.ae-section {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #8aaa96;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid #e8ede9;
+    margin: 1.2rem 0 0.8rem;
+}
 
 ::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-thumb { background: #a5d6a7; border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: #c0d0c8; }
 </style>
 """, unsafe_allow_html=True)
 
-# ── Session state ──────────────────────────────────────────────────────────
+# ── Session state ─────────────────────────────────────────────────────────
 for k, v in {
-    "role":        None,    # "farmer" | "scientist" | "admin"
+    "role":        None,
     "farmer_id":   None,
     "farmer_name": None,
     "farm_id":     None,
+    "farm_name":   None,
     "sci_id":      None,
     "sci_name":    None,
-    "page":        "home",  # "home" | "farmer_register" | ...
     "last_report": None,
+    "credits":     0,
 }.items():
     if k not in st.session_state:
         st.session_state[k] = v
 
-# ── Landing page ───────────────────────────────────────────────────────────
+# ── Landing ───────────────────────────────────────────────────────────────
 if st.session_state.role is None:
+
     st.markdown("""
-    <div class="fd-hero">
-        <div class="fd-logo">Farm<span>Diagnose</span></div>
-        <div class="fd-tagline">AI-Powered Crop Diagnostic Platform</div>
-        <div class="fd-hi">कृषि स्वास्थ्य — AI से जाँच</div>
-        <div class="role-grid">
-            <div class="role-card" id="farmer-card">
-                <div class="role-icon">👨‍🌾</div>
-                <div>
-                    <div class="role-en">I am a Farmer</div>
-                    <div class="role-sub">Submit plant photos, get expert advice</div>
-                    <div class="role-hi">किसान हूँ — पौधा जाँचवाना है</div>
-                </div>
-                <div class="role-arrow">›</div>
+    <div class="ae-landing">
+        <div class="ae-landing-top">
+            <div class="ae-wordmark">AgriExpert</div>
+            <div class="ae-headline">Crop health<br>diagnostics.<br><span>Expert advice.</span></div>
+            <div class="ae-divider"></div>
+            <div class="ae-subline">
+                Submit a photo. Get an AI pre-diagnosis.
+                Receive recommendations from certified agronomists.
             </div>
-            <div class="role-card" id="scientist-card">
-                <div class="role-icon">👨‍🔬</div>
-                <div>
-                    <div class="role-en">I am a Scientist</div>
-                    <div class="role-sub">Review reports, give recommendations</div>
-                    <div class="role-hi">वैज्ञानिक हूँ — किसानों की मदद करनी है</div>
-                </div>
-                <div class="role-arrow">›</div>
+            <div class="ae-subline-hi">
+                फ़ोटो भेजें — AI जाँच करेगा — विशेषज्ञ सलाह पाएं
             </div>
-            <div class="role-card" id="admin-card">
-                <div class="role-icon">⚙️</div>
-                <div>
-                    <div class="role-en">Admin</div>
-                    <div class="role-sub">Manage platform, farms, and users</div>
-                    <div class="role-hi">व्यवस्थापक</div>
+        </div>
+        <div class="ae-roles">
+            <div class="ae-role">
+                <div class="ae-role-left">
+                    <div class="ae-role-title">Farmer Portal</div>
+                    <div class="ae-role-sub">Submit plant photos · Track reports · Get recommendations</div>
+                    <div class="ae-role-hi">किसान पोर्टल</div>
+                    <div class="ae-credit-note">3 FREE credits on signup</div>
                 </div>
-                <div class="role-arrow">›</div>
+                <div class="ae-role-arrow">—</div>
+            </div>
+            <div class="ae-role">
+                <div class="ae-role-left">
+                    <div class="ae-role-title">Scientist Portal</div>
+                    <div class="ae-role-sub">Review diagnostic queue · Issue recommendations</div>
+                    <div class="ae-role-hi">वैज्ञानिक पोर्टल</div>
+                </div>
+                <div class="ae-role-arrow">—</div>
+            </div>
+            <div class="ae-role">
+                <div class="ae-role-left">
+                    <div class="ae-role-title">Administrator</div>
+                    <div class="ae-role-sub">Manage platform · Farms · Scientists · Credits</div>
+                </div>
+                <div class="ae-role-arrow">—</div>
             </div>
         </div>
     </div>
@@ -343,15 +507,15 @@ if st.session_state.role is None:
 
     c1, c2, c3 = st.columns(3)
     with c1:
-        if st.button("👨‍🌾 Farmer", key="go_farmer", type="primary"):
+        if st.button("Farmer", key="go_farmer", type="primary"):
             st.session_state.role = "farmer"
             st.rerun()
     with c2:
-        if st.button("👨‍🔬 Scientist", key="go_scientist"):
+        if st.button("Scientist", key="go_scientist"):
             st.session_state.role = "scientist"
             st.rerun()
     with c3:
-        if st.button("⚙️ Admin", key="go_admin"):
+        if st.button("Admin", key="go_admin"):
             st.session_state.role = "admin"
             st.rerun()
 
