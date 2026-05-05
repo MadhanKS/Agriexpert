@@ -131,7 +131,7 @@ def show_farmer():
                             "Farm_ID":      farm_id,
                             "Farm_Name":    r_farm,
                             "Language":     r_lang,
-                            "Credits":      FREE_CREDITS,
+                            "Credits":      "0",
                             "Registered_At":datetime.now().strftime("%Y-%m-%d %H:%M"),
                         }])
 
@@ -184,17 +184,6 @@ def show_farmer():
             <div class="ae-card-value">{crop_type}</div>
         </div>
         """, unsafe_allow_html=True)
-
-        if credits <= 0:
-            st.markdown(f"""
-            <div class="ae-alert">
-                You have no diagnostic credits remaining. Each report costs
-                1 credit (&#8377;{CREDIT_PRICE_INR}). Purchase credits below
-                in the Credits tab.
-            </div>
-            """, unsafe_allow_html=True)
-            st.markdown('</div>', unsafe_allow_html=True)
-            return
 
         st.markdown("""
         <div class="ae-section">Photograph</div>
