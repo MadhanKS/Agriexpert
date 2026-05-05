@@ -72,70 +72,91 @@ def show_farmer():
                 """, unsafe_allow_html=True)
             else:
                 farm_opts = farms_df["Farm_Name"].tolist() if "Farm_Name" in farms_df.columns else []
-                with st.form("farmer_reg", clear_on_submit=True):
-                    r_name  = st.text_input("Full Name")
-                    r_phone = st.text_input("Phone Number")
-                    r_farm  = st.selectbox("Your Farm", farm_opts)
-                    r_village = st.selectbox(
-                        "Village / Location *",
-                        ["Select your village"] + IDUKKI_VILLAGES
-                    )
-                    r_lang  = st.selectbox("Preferred Language", [
-                        "English", "Tamil", "Malayalam"
-                    ])
-                    if st.form_submit_button("Register", type="primary"):
-                        if not r_name.strip():
-                            st.error("Full name is required.")
-                        elif not r_phone.strip():
-                            st.error("Phone number is mandatory.")
-                        elif len(r_phone.strip()) != 10 or not r_phone.strip().isdigit():
-                            st.error("Enter a valid 10-digit phone number.")
-                        elif r_village == "Select your village":
-                            st.error("Please select your village.")
-                        else:
-                            if not farmers_df.empty and "Phone" in farmers_df.columns:
-                                dup = farmers_df[
-                                    farmers_df["Phone"].astype(str).str.strip() == r_phone.strip()
-                                ]
-                                if not dup.empty:
-                                    st.error("This phone number is already registered.")
-                                    st.stop()
+                # Fields outside form — instant validation feedback on mobile
+                r_name    = st.text_input("Full Name *", key="reg_name",
+                                          placeholder="Enter your full name")
+                r_phone   = st.text_input("Phone Number *", key="reg_phone",
+                                          placeholder="10-digit mobile number",
+                                          help="Required — used for login")
 
-                            farm_row = farms_df[farms_df["Farm_Name"] == r_farm]
-                            farm_id  = clean(farm_row.iloc[0].get("Farm_ID")) if not farm_row.empty else ""
+                # Live phone validation
+                if r_phone and (not r_phone.strip().isdigit() or len(r_phone.strip()) != 10):
+                    st.markdown("""
+                    <div style="color:#c62828;font-size:0.78rem;font-weight:600;
+                                margin-top:-8px;margin-bottom:4px;">
+                        Enter a valid 10-digit phone number
+                    </div>""", unsafe_allow_html=True)
 
-                            fid = gen_id("FMR", r_phone)
-                            new = pd.DataFrame([{
-                                "Farmer_ID":    fid,
-                                "Name":         r_name.strip(),
-                                "Phone":        r_phone.strip(),
-                                "Village":      r_village,
-                                "Farm_ID":      farm_id,
-                                "Farm_Name":    r_farm,
-                                "Language":     r_lang,
-                                "Credits":      FREE_CREDITS,
-                                "Registered_At":datetime.now().strftime("%Y-%m-%d %H:%M"),
-                            }])
+                r_farm    = st.selectbox("Your Farm *", farm_opts, key="reg_farm")
+                r_village = st.selectbox(
+                    "Village *",
+                    ["Select your village"] + IDUKKI_VILLAGES,
+                    key="reg_village"
+                )
+                r_lang    = st.selectbox("Preferred Language", [
+                    "English", "Tamil", "Malayalam"
+                ], key="reg_lang")
+
+                if st.button("Register", type="primary", key="do_register",
+                             use_container_width=True):
+                    err_msg = ""
+                    if not r_name.strip():
+                        err_msg = "Full name is required."
+                    elif not r_phone.strip():
+                        err_msg = "Phone number is mandatory."
+                    elif not r_phone.strip().isdigit() or len(r_phone.strip()) != 10:
+                        err_msg = "Enter a valid 10-digit phone number."
+                    elif r_village == "Select your village":
+                        err_msg = "Please select your village."
+
+                    if err_msg:
+                        st.error(err_msg)
+                    else:
+                        # Check duplicate phone
+                        if not farmers_df.empty and "Phone" in farmers_df.columns:
+                            dup = farmers_df[
+                                farmers_df["Phone"].astype(str).str.strip() == r_phone.strip()
+                            ]
+                            if not dup.empty:
+                                st.error("This phone number is already registered. Please login.")
+                                st.stop()
+
+                        farm_row = farms_df[farms_df["Farm_Name"] == r_farm]
+                        farm_id  = clean(farm_row.iloc[0].get("Farm_ID")) if not farm_row.empty else ""
+
+                        fid = gen_id("FMR", r_phone)
+                        new = pd.DataFrame([{
+                            "Farmer_ID":    fid,
+                            "Name":         r_name.strip(),
+                            "Phone":        r_phone.strip(),
+                            "Village":      r_village,
+                            "Farm_ID":      farm_id,
+                            "Farm_Name":    r_farm,
+                            "Language":     r_lang,
+                            "Credits":      FREE_CREDITS,
+                            "Registered_At":datetime.now().strftime("%Y-%m-%d %H:%M"),
+                        }])
+
+                        with st.spinner("Registering..."):
                             ok, err = safe_update(
                                 "Farmers",
                                 pd.concat([farmers_df, new], ignore_index=True)
                             )
-                            if ok:
-                                # Log the free credit grant
-                                from data import add_credits
-                                add_credits(fid, r_name.strip(),
-                                            FREE_CREDITS, 0,
-                                            f"Welcome — {FREE_CREDITS} free credits")
-                                st.markdown(f"""
-                                <div class="ae-info">
-                                    Registration successful. You have been credited
-                                    <strong>{FREE_CREDITS} free diagnostic credits</strong>.
-                                    Login with your phone number.
-                                </div>
-                                """, unsafe_allow_html=True)
-                                st.cache_data.clear()
-                            else:
-                                st.error(f"Registration failed: {err}")
+                        if ok:
+                            from data import add_credits
+                            add_credits(fid, r_name.strip(),
+                                        FREE_CREDITS, 0,
+                                        f"Welcome — {FREE_CREDITS} free credits")
+                            st.markdown(f"""
+                            <div class="ae-info">
+                                <strong>Registration successful.</strong><br>
+                                You have {FREE_CREDITS} free diagnostic credits.<br>
+                                Login with phone number: <strong>{r_phone.strip()}</strong>
+                            </div>
+                            """, unsafe_allow_html=True)
+                            st.cache_data.clear()
+                        else:
+                            st.error(f"Registration failed: {err}")
 
         st.markdown('</div>', unsafe_allow_html=True)
         return
