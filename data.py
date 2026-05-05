@@ -6,7 +6,6 @@ from datetime import datetime
 import base64, hashlib, uuid, json, time
 from streamlit_gsheets import GSheetsConnection
 import gspread
-from google.oauth2.service_account import Credentials
 
 conn      = st.connection("gsheets", type=GSheetsConnection)
 SHEET_URL = st.secrets["gsheets"]["spreadsheet"]
@@ -15,8 +14,8 @@ SHEET_URL = st.secrets["gsheets"]["spreadsheet"]
 @st.cache_resource
 def get_gspread_client():
     """
-    Build a gspread client directly from secrets.
-    st-gsheets-connection handles reads fine but writes need this for reliability.
+    Build a gspread client using service_account_from_dict —
+    the modern recommended approach for gspread 6+
     """
     creds_dict = {
         "type":                        st.secrets["gsheets"]["type"],
@@ -25,19 +24,16 @@ def get_gspread_client():
         "private_key":                 st.secrets["gsheets"]["private_key"],
         "client_email":                st.secrets["gsheets"]["client_email"],
         "client_id":                   st.secrets["gsheets"]["client_id"],
-        "auth_uri":                    st.secrets["gsheets"].get("auth_uri","https://accounts.google.com/o/oauth2/auth"),
-        "token_uri":                   st.secrets["gsheets"].get("token_uri","https://oauth2.googleapis.com/token"),
-        "auth_provider_x509_cert_url": st.secrets["gsheets"].get("auth_provider_x509_cert_url","https://www.googleapis.com/oauth2/v1/certs"),
-        "client_x509_cert_url":        st.secrets["gsheets"].get("client_x509_cert_url",""),
-        "universe_domain":             st.secrets["gsheets"].get("universe_domain","googleapis.com"),
+        "auth_uri":                    st.secrets["gsheets"].get("auth_uri",
+                                           "https://accounts.google.com/o/oauth2/auth"),
+        "token_uri":                   st.secrets["gsheets"].get("token_uri",
+                                           "https://oauth2.googleapis.com/token"),
+        "auth_provider_x509_cert_url": st.secrets["gsheets"].get("auth_provider_x509_cert_url",
+                                           "https://www.googleapis.com/oauth2/v1/certs"),
+        "client_x509_cert_url":        st.secrets["gsheets"].get("client_x509_cert_url", ""),
+        "universe_domain":             st.secrets["gsheets"].get("universe_domain", "googleapis.com"),
     }
-    scopes = [
-        "https://spreadsheets.google.com/feeds",
-        "https://www.googleapis.com/auth/spreadsheets",
-        "https://www.googleapis.com/auth/drive",
-    ]
-    creds  = Credentials.from_service_account_info(creds_dict, scopes=scopes)
-    return gspread.authorize(creds)
+    return gspread.service_account_from_dict(creds_dict)
 
 # ── Credit pricing ────────────────────────────────────────────────────────
 CREDIT_PRICE_INR  = 99          # ₹99 per diagnostic credit
