@@ -89,13 +89,8 @@ def safe_update(worksheet_name, data, retries=3):
     """
     for attempt in range(retries):
         try:
-            gc  = get_gspread_client()
-            # Extract sheet ID from URL — works regardless of URL format
-            import re as _re
-            _match = _re.search(r'/spreadsheets/d/([a-zA-Z0-9-_]+)', SHEET_URL)
-            if not _match:
-                return False, "Invalid spreadsheet URL in secrets."
-            sheet_id    = _match.group(1)
+            gc          = get_gspread_client()
+            sheet_id    = _extract_sheet_id(SHEET_URL)
             spreadsheet = gc.open_by_key(sheet_id)
             ws          = spreadsheet.worksheet(worksheet_name)
 
@@ -140,18 +135,24 @@ def gen_id(prefix, seed=""):
     return prefix + "-" + hashlib.md5(raw.encode()).hexdigest()[:8].upper()
 
 # ── Shared sheet reader using gspread (same auth as writes) ───────────────
+def _extract_sheet_id(url):
+    """Extract Google Sheet ID from any URL format."""
+    import re as _re
+    _match = _re.search(r'/spreadsheets/d/([a-zA-Z0-9-_]+)', url)
+    if not _match:
+        raise ValueError(f"Cannot extract sheet ID from URL: {url[:80]}")
+    return _match.group(1)
+
 def read_sheet(worksheet_name):
     """
     Read a worksheet using gspread directly — same client as writes.
     Returns a DataFrame. Raises exception on failure (do not silent-catch).
     """
-    import re as _re
-    gc        = get_gspread_client()
-    _match    = _re.search(r'/spreadsheets/d/([a-zA-Z0-9-_]+)', SHEET_URL)
-    sheet_id  = _match.group(1)
-    sheet     = gc.open_by_key(sheet_id)
-    ws        = sheet.worksheet(worksheet_name)
-    records   = ws.get_all_values()
+    gc       = get_gspread_client()
+    sheet_id = _extract_sheet_id(SHEET_URL)
+    sheet    = gc.open_by_key(sheet_id)
+    ws       = sheet.worksheet(worksheet_name)
+    records  = ws.get_all_values()
     if not records:
         return pd.DataFrame()
     headers = [h.strip() for h in records[0]]
