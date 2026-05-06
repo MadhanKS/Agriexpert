@@ -10,7 +10,7 @@ import gspread
 conn = st.connection("gsheets", type=GSheetsConnection)
 
 def _gs():
-    """Return an authenticated gspread client and open spreadsheet. Always fresh."""
+    """Return authenticated gspread spreadsheet. Reads secrets fresh every call."""
     creds = {
         "type":                        st.secrets["gsheets"]["type"],
         "project_id":                  st.secrets["gsheets"]["project_id"],
@@ -24,13 +24,21 @@ def _gs():
         "client_x509_cert_url":        st.secrets["gsheets"].get("client_x509_cert_url", ""),
         "universe_domain":             "googleapis.com",
     }
-    gc  = gspread.service_account_from_dict(creds)
-    url = st.secrets["gsheets"]["spreadsheet"]
+    gc = gspread.service_account_from_dict(creds)
+    # Use sheet ID directly from secrets — no URL parsing needed
+    sheet_id = st.secrets["gsheets"].get("sheet_id", "")
+    if sheet_id:
+        return gc.open_by_key(sheet_id)
+    # Fallback: parse from URL
+    url = st.secrets["gsheets"].get("spreadsheet", "")
     import re as _re
-    m   = _re.search(r'/spreadsheets/d/([a-zA-Z0-9-_]+)', url)
-    if not m:
-        raise ValueError("Invalid spreadsheet URL in secrets.")
-    return gc.open_by_key(m.group(1))
+    m = _re.search(r'/spreadsheets/d/([A-Za-z0-9_-]+)', url)
+    if m:
+        return gc.open_by_key(m.group(1))
+    # Last resort: treat the whole spreadsheet value as the ID
+    if url and '/' not in url:
+        return gc.open_by_key(url)
+    raise ValueError(f"Cannot open spreadsheet. Add sheet_id to secrets.")
 
 # ── Credit pricing ────────────────────────────────────────────────────────
 CREDIT_PRICE_INR  = 99          # ₹99 per diagnostic credit
