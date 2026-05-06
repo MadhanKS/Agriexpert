@@ -19,7 +19,7 @@ def show_scientist():
 
     st.markdown("""
     <div class="ae-header">
-        <div class="ae-header-nav">AgriExpert / Scientist Portal</div>
+        <div class="ae-header-logo">AgriExpert</div>
         <div class="ae-header-title">Scientist Portal</div>
         <div class="ae-header-sub">Review diagnostic queue · Issue recommendations</div>
     </div>
