@@ -19,7 +19,7 @@ def show_admin():
 
     st.markdown("""
     <div class="ae-header">
-        <div class="ae-header-nav">AgriExpert / Administrator</div>
+        <div class="ae-header-logo">AgriExpert</div>
         <div class="ae-header-title">Admin Portal</div>
         <div class="ae-header-sub">Platform management · Farms · Scientists · Credits</div>
     </div>
