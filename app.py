@@ -789,7 +789,7 @@ if st.session_state.role is None:
   </div>
   <div class="stats">
     <div class="stat">
-      <div class="stat-num">100</div>
+      <div class="stat-num">1000</div>
       <div class="stat-label">Farmers</div>
     </div>
     <div class="stat">
