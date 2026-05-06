@@ -21,7 +21,7 @@ def show_farmer():
 
     st.markdown("""
     <div class="ae-header">
-        <div class="ae-header-nav">AgriExpert / Farmer Portal</div>
+        <div class="ae-header-logo">AgriExpert</div>
         <div class="ae-header-title">Farmer Portal</div>
         <div class="ae-header-sub">Submit reports · Track recommendations</div>
     </div>
@@ -318,19 +318,12 @@ def show_farmer():
 
             st.markdown(f"""
             <div class="ae-sep"></div>
-            <div style="background:#e8f5ed;border:1px solid #a8d8b8;border-radius:4px;
-                        padding:1.2rem 1.1rem;text-align:center;">
-                <div style="font-size:0.65rem;font-weight:600;letter-spacing:0.12em;
-                            text-transform:uppercase;color:#2e7d32;margin-bottom:0.5rem;">
-                    Report Submitted
-                </div>
-                <div style="font-family:'IBM Plex Mono',monospace;font-size:1.5rem;
-                            font-weight:500;color:#0f2218;letter-spacing:2px;
-                            margin-bottom:0.5rem;">
-                    {rid}
-                </div>
-                <div style="font-size:0.82rem;color:#3a5a46;line-height:1.5;">
-                    Your report has been received. Tap below to notify your specialist.
+            <div class="submit-confirm">
+                <div class="submit-confirm-label">Report Submitted</div>
+                <div class="submit-confirm-id">{rid}</div>
+                <div class="submit-confirm-sub">
+                    Received and queued for specialist review.<br>
+                    Tap below to notify your specialist.
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -348,15 +341,9 @@ def show_farmer():
                 )
                 wa_url = f"https://wa.me/91{sci_ph.replace(' ','').replace('+91','').replace('-','')}?text={wa_msg}"
                 st.markdown(f"""
-                <div style="margin-top:0.8rem;">
-                    <a href="{wa_url}" target="_blank"
-                       style="display:block;background:#25D366;color:white;
-                              text-align:center;padding:0.85rem;border-radius:4px;
-                              font-weight:600;font-size:0.9rem;text-decoration:none;
-                              letter-spacing:0.02em;">
-                        Notify Specialist on WhatsApp
-                    </a>
-                </div>
+                <a href="{wa_url}" target="_blank" class="wa-btn">
+                    Notify Specialist on WhatsApp
+                </a>
                 """, unsafe_allow_html=True)
             else:
                 st.markdown("""
@@ -468,3 +455,4 @@ def show_farmer():
                             """, unsafe_allow_html=True)
 
         st.markdown('</div>', unsafe_allow_html=True)
+
