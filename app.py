@@ -238,21 +238,7 @@ html, body, [class*="css"] {
     z-index: 1;
 }
 
-/* Streamlit button overrides for landing */
-section[data-testid="stVerticalBlock"] .stButton > button {
-    background: transparent !important;
-    border: none !important;
-    padding: 0 !important;
-    height: auto !important;
-    min-height: unset !important;
-    color: transparent !important;
-    font-size: 0 !important;
-    position: absolute !important;
-    inset: 0 !important;
-    width: 100% !important;
-    cursor: pointer !important;
-    opacity: 0 !important;
-}
+
 
 /* ═══════════════════════════════════════════
    INNER PAGE HEADER
@@ -712,119 +698,143 @@ for k, v in {
 # ── Landing ───────────────────────────────────────────────────────────────
 if st.session_state.role is None:
 
-    # Hero section — only safe CSS (no position:absolute, no webkit, no radial-gradient)
-    st.markdown("""
-    <div style="background:#0a1f12;padding:2.2rem 1.8rem 1.8rem;">
+    import streamlit.components.v1 as components
 
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:1.8rem;">
-            <div style="width:32px;height:32px;border-radius:8px;
-                        background:#34a853;text-align:center;
-                        line-height:32px;font-size:15px;">🌿</div>
-            <div style="font-size:1rem;font-weight:800;color:#ffffff;letter-spacing:-0.3px;">
-                Agri<span style="color:#34a853;">Expert</span>
-            </div>
-        </div>
-
-        <div style="display:inline-block;background:#1a3a22;border:1px solid #2a5a32;
-                    border-radius:20px;padding:4px 12px;font-size:0.65rem;font-weight:700;
-                    color:#6fcf8d;letter-spacing:0.08em;text-transform:uppercase;
-                    margin-bottom:1rem;">
-            AI Crop Diagnostics
-        </div>
-
-        <div style="font-size:2.4rem;font-weight:800;color:#ffffff;line-height:1.1;
-                    letter-spacing:-1px;margin-bottom:0.8rem;">
-            Healthy crops.
-        </div>
-        <div style="font-size:2.4rem;font-weight:800;color:#34a853;line-height:1.1;
-                    letter-spacing:-1px;margin-bottom:1rem;">
-            Expert advice.
-        </div>
-
-        <div style="font-size:0.85rem;color:#6a9a7a;line-height:1.6;margin-bottom:1.8rem;">
-            Photo to diagnosis in minutes.
-            Reviewed by certified agronomists.
-        </div>
-
-        <div style="display:flex;gap:0.7rem;margin-bottom:0.5rem;">
-            <div style="flex:1;background:#122a1a;border:1px solid #1e3a24;
-                        border-radius:12px;padding:0.85rem 0.5rem;text-align:center;">
-                <div style="font-size:1.6rem;font-weight:800;color:#ffffff;line-height:1;">100</div>
-                <div style="font-size:0.58rem;color:#4a7a5a;text-transform:uppercase;
-                            letter-spacing:0.08em;font-weight:700;margin-top:4px;">Farmers</div>
-            </div>
-            <div style="flex:1;background:#122a1a;border:1px solid #1e3a24;
-                        border-radius:12px;padding:0.85rem 0.5rem;text-align:center;">
-                <div style="font-size:1.6rem;font-weight:800;color:#ffffff;line-height:1;">10</div>
-                <div style="font-size:0.58rem;color:#4a7a5a;text-transform:uppercase;
-                            letter-spacing:0.08em;font-weight:700;margin-top:4px;">Scientists</div>
-            </div>
-            <div style="flex:1;background:#1a3a22;border:1px solid #2a5a32;
-                        border-radius:12px;padding:0.85rem 0.5rem;text-align:center;">
-                <div style="font-size:1.6rem;font-weight:800;color:#34a853;line-height:1;">AI</div>
-                <div style="font-size:0.58rem;color:#4a7a5a;text-transform:uppercase;
-                            letter-spacing:0.08em;font-weight:700;margin-top:4px;">Powered</div>
-            </div>
-        </div>
+    # Hero rendered via components.v1.html — never blocked by Streamlit security
+    components.html("""
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+    background: #0a1f12;
+    min-height: 100vh;
+    padding: 2rem 1.6rem 1.5rem;
+  }
+  .logo {
+    display:flex; align-items:center; gap:9px; margin-bottom:1.8rem;
+  }
+  .logo-icon {
+    width:34px; height:34px; border-radius:9px;
+    background: linear-gradient(135deg,#34a853,#1a7a35);
+    display:flex; align-items:center; justify-content:center;
+    font-size:16px; flex-shrink:0;
+  }
+  .logo-text {
+    font-size:1.05rem; font-weight:800; color:#fff; letter-spacing:-0.3px;
+  }
+  .logo-text span { color:#34a853; }
+  .tag {
+    display:inline-block;
+    background:rgba(52,168,83,0.15);
+    border:1px solid rgba(52,168,83,0.35);
+    border-radius:20px; padding:4px 13px;
+    font-size:0.62rem; font-weight:700;
+    color:#6fcf8d; letter-spacing:0.08em;
+    text-transform:uppercase; margin-bottom:1.1rem;
+  }
+  .h1 {
+    font-size:2.5rem; font-weight:800; color:#fff;
+    line-height:1.1; letter-spacing:-1px; margin-bottom:0.4rem;
+  }
+  .h1-green {
+    font-size:2.5rem; font-weight:800;
+    background: linear-gradient(135deg,#34a853,#6fcf8d);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+    background-clip:text; line-height:1.1;
+    letter-spacing:-1px; margin-bottom:1rem; display:block;
+  }
+  .sub {
+    font-size:0.85rem; color:#6a9a7a;
+    line-height:1.65; margin-bottom:1.8rem; max-width:280px;
+  }
+  .stats { display:flex; gap:0.7rem; }
+  .stat {
+    flex:1; border-radius:12px; padding:0.85rem 0.4rem;
+    text-align:center;
+    background:rgba(255,255,255,0.05);
+    border:1px solid rgba(255,255,255,0.08);
+  }
+  .stat-green {
+    background:rgba(52,168,83,0.12);
+    border:1px solid rgba(52,168,83,0.25);
+  }
+  .stat-num {
+    font-size:1.55rem; font-weight:800; color:#fff;
+    line-height:1; font-family:monospace;
+  }
+  .stat-green .stat-num { color:#34a853; }
+  .stat-label {
+    font-size:0.55rem; color:#4a7a5a;
+    text-transform:uppercase; letter-spacing:0.08em;
+    font-weight:700; margin-top:4px;
+  }
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="logo">
+    <div class="logo-icon">🌿</div>
+    <div class="logo-text">Agri<span>Expert</span></div>
+  </div>
+  <div class="tag">AI Crop Diagnostics</div>
+  <div class="h1">Healthy crops.</div>
+  <span class="h1-green">Expert advice.</span>
+  <div class="sub">
+    Photo to diagnosis in minutes.<br>
+    Reviewed by certified agronomists.
+  </div>
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-num">100</div>
+      <div class="stat-label">Farmers</div>
     </div>
-    """, unsafe_allow_html=True)
-
-    # Role selector
-    st.markdown("""
-    <div style="background:#f7f8f5;padding:1.2rem 1.4rem 0.4rem;">
-        <div style="font-size:0.62rem;font-weight:700;color:#8aaa96;
-                    letter-spacing:0.12em;text-transform:uppercase;">
-            Select your role
-        </div>
+    <div class="stat">
+      <div class="stat-num">10</div>
+      <div class="stat-label">Scientists</div>
     </div>
-    """, unsafe_allow_html=True)
+    <div class="stat stat-green">
+      <div class="stat-num">AI</div>
+      <div class="stat-label">Powered</div>
+    </div>
+  </div>
+</body>
+</html>
+    """, height=420, scrolling=False)
 
-    # Button styling — card look using Streamlit native
-    st.markdown("""
-    <style>
-    [data-testid="stVerticalBlock"] [data-testid="stButton"] button {
-        background: #fff !important;
-        color: #111111 !important;
-        border: 1.5px solid #e0e8e3 !important;
-        border-radius: 14px !important;
-        min-height: 64px !important;
-        font-size: 0.88rem !important;
-        font-weight: 600 !important;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
-    }
-    [data-testid="stVerticalBlock"] [data-testid="stButton"]:first-of-type button {
-        background: linear-gradient(135deg,#1a5c35,#2d8a52) !important;
-        color: #fff !important;
-        border: none !important;
-        box-shadow: 0 4px 14px rgba(26,92,53,0.35) !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+    # Role buttons — native Streamlit, always works
+    st.markdown(
+        "<div style='padding:0.2rem 0 0.3rem;"
+        "font-size:0.62rem;font-weight:700;color:#8aaa96;"
+        "letter-spacing:0.12em;text-transform:uppercase;'>"
+        "Select your role</div>",
+        unsafe_allow_html=True
+    )
 
-    st.markdown('<div style="padding:0 1.4rem 1.4rem;background:#f7f8f5;">', unsafe_allow_html=True)
-
-    if st.button("Farmer Portal  —  Submit photos, get recommendations",
+    if st.button("Farmer Portal — Submit photos, get recommendations",
                  key="go_farmer", type="primary", use_container_width=True):
         st.session_state.role = "farmer"
         st.rerun()
-    st.markdown('<div style="height:6px;"></div>', unsafe_allow_html=True)
-    if st.button("Scientist Portal  —  Review reports, issue recommendations",
+
+    if st.button("Scientist Portal — Review reports, issue recommendations",
                  key="go_scientist", use_container_width=True):
         st.session_state.role = "scientist"
         st.rerun()
-    st.markdown('<div style="height:6px;"></div>', unsafe_allow_html=True)
-    if st.button("Administrator  —  Manage platform, farms and users",
+
+    if st.button("Administrator — Manage platform, farms and users",
                  key="go_admin", use_container_width=True):
         st.session_state.role = "admin"
         st.rerun()
 
-    st.markdown("</div>", unsafe_allow_html=True)
-    st.markdown("""
-    <div style="background:#f7f8f5;text-align:center;padding:1rem 0 1.5rem;
-                font-size:0.6rem;color:#b0c8b8;letter-spacing:0.1em;">
-        AGRIEXPERT.IN &nbsp;·&nbsp; IDUKKI, KERALA
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(
+        "<div style='text-align:center;padding:1rem 0 0.5rem;"
+        "font-size:0.6rem;color:#b0c8b8;letter-spacing:0.1em;'>"
+        "AGRIEXPERT.IN · IDUKKI, KERALA</div>",
+        unsafe_allow_html=True
+    )
 
 elif st.session_state.role == "farmer":
     from pages.farmer import show_farmer
@@ -837,4 +847,3 @@ elif st.session_state.role == "scientist":
 elif st.session_state.role == "admin":
     from pages.admin import show_admin
     show_admin()
-    
