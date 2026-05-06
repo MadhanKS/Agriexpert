@@ -1,5 +1,5 @@
 """
-AgriExpert — Crop Diagnostic Platform
+AgriExpert — Crop Diagnostic Platform v2.1
 Professional AI-powered plant health diagnostics connecting farmers with scientists.
 """
 
@@ -837,3 +837,4 @@ elif st.session_state.role == "scientist":
 elif st.session_state.role == "admin":
     from pages.admin import show_admin
     show_admin()
+    
