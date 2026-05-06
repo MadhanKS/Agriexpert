@@ -712,86 +712,117 @@ for k, v in {
 # ── Landing ───────────────────────────────────────────────────────────────
 if st.session_state.role is None:
 
-    # Header block
+    # Hero section — only safe CSS (no position:absolute, no webkit, no radial-gradient)
     st.markdown("""
-    <div style="background:#0f2218;padding:3rem 2rem 2rem;min-height:45vh;">
-        <div style="font-size:0.72rem;font-weight:600;letter-spacing:0.2em;
-                    color:#5a9a6e;text-transform:uppercase;margin-bottom:0.75rem;">
-            AgriExpert
+    <div style="background:#0a1f12;padding:2.2rem 1.8rem 1.8rem;">
+
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:1.8rem;">
+            <div style="width:32px;height:32px;border-radius:8px;
+                        background:#34a853;text-align:center;
+                        line-height:32px;font-size:15px;">🌿</div>
+            <div style="font-size:1rem;font-weight:800;color:#ffffff;letter-spacing:-0.3px;">
+                Agri<span style="color:#34a853;">Expert</span>
+            </div>
         </div>
-        <div style="font-size:2.2rem;font-weight:700;color:#ffffff;
-                    line-height:1.15;letter-spacing:-0.5px;margin-bottom:0.5rem;">
-            Crop health<br>diagnostics.<br>
-            <span style="color:#6fcf8d;">Expert advice.</span>
+
+        <div style="display:inline-block;background:#1a3a22;border:1px solid #2a5a32;
+                    border-radius:20px;padding:4px 12px;font-size:0.65rem;font-weight:700;
+                    color:#6fcf8d;letter-spacing:0.08em;text-transform:uppercase;
+                    margin-bottom:1rem;">
+            AI Crop Diagnostics
         </div>
-        <div style="height:1px;background:linear-gradient(90deg,#2a4a36,#1a3226);
-                    margin:1.5rem 0;"></div>
-        <div style="font-size:0.88rem;color:#7aab8a;font-weight:300;line-height:1.5;">
-            Submit a photo. Get an AI pre-diagnosis.<br>
-            Receive recommendations from certified agronomists.
+
+        <div style="font-size:2.4rem;font-weight:800;color:#ffffff;line-height:1.1;
+                    letter-spacing:-1px;margin-bottom:0.8rem;">
+            Healthy crops.
         </div>
-        <div style="font-family:'IBM Plex Sans',sans-serif;font-size:0.8rem;
-                    color:#4a7a5a;margin-top:4px;">
-             AI  
+        <div style="font-size:2.4rem;font-weight:800;color:#34a853;line-height:1.1;
+                    letter-spacing:-1px;margin-bottom:1rem;">
+            Expert advice.
+        </div>
+
+        <div style="font-size:0.85rem;color:#6a9a7a;line-height:1.6;margin-bottom:1.8rem;">
+            Photo to diagnosis in minutes.
+            Reviewed by certified agronomists.
+        </div>
+
+        <div style="display:flex;gap:0.7rem;margin-bottom:0.5rem;">
+            <div style="flex:1;background:#122a1a;border:1px solid #1e3a24;
+                        border-radius:12px;padding:0.85rem 0.5rem;text-align:center;">
+                <div style="font-size:1.6rem;font-weight:800;color:#ffffff;line-height:1;">100</div>
+                <div style="font-size:0.58rem;color:#4a7a5a;text-transform:uppercase;
+                            letter-spacing:0.08em;font-weight:700;margin-top:4px;">Farmers</div>
+            </div>
+            <div style="flex:1;background:#122a1a;border:1px solid #1e3a24;
+                        border-radius:12px;padding:0.85rem 0.5rem;text-align:center;">
+                <div style="font-size:1.6rem;font-weight:800;color:#ffffff;line-height:1;">10</div>
+                <div style="font-size:0.58rem;color:#4a7a5a;text-transform:uppercase;
+                            letter-spacing:0.08em;font-weight:700;margin-top:4px;">Scientists</div>
+            </div>
+            <div style="flex:1;background:#1a3a22;border:1px solid #2a5a32;
+                        border-radius:12px;padding:0.85rem 0.5rem;text-align:center;">
+                <div style="font-size:1.6rem;font-weight:800;color:#34a853;line-height:1;">AI</div>
+                <div style="font-size:0.58rem;color:#4a7a5a;text-transform:uppercase;
+                            letter-spacing:0.08em;font-weight:700;margin-top:4px;">Powered</div>
+            </div>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
-    # Role buttons — full width, clearly tappable
+    # Role selector
     st.markdown("""
-    <div style="background:#0f2218;padding:0 1.5rem 0.5rem;">
-        <div style="font-size:0.62rem;font-weight:600;letter-spacing:0.12em;
-                    text-transform:uppercase;color:#3a6a4e;margin-bottom:0.6rem;">
+    <div style="background:#f7f8f5;padding:1.2rem 1.4rem 0.4rem;">
+        <div style="font-size:0.62rem;font-weight:700;color:#8aaa96;
+                    letter-spacing:0.12em;text-transform:uppercase;">
             Select your role
         </div>
     </div>
     """, unsafe_allow_html=True)
 
-    # Override button style for landing page — dark theme full-width cards
+    # Button styling — card look using Streamlit native
     st.markdown("""
     <style>
-    div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlockBorderWrapper"]:first-child .stButton > button,
-    .landing-btn .stButton > button {
-        background: #132018 !important;
-        color: #e8f0eb !important;
-        border: 1px solid #1e3628 !important;
-        border-radius: 3px !important;
+    [data-testid="stVerticalBlock"] [data-testid="stButton"] button {
+        background: #fff !important;
+        color: #111111 !important;
+        border: 1.5px solid #e0e8e3 !important;
+        border-radius: 14px !important;
         min-height: 64px !important;
-        font-size: 0.92rem !important;
+        font-size: 0.88rem !important;
         font-weight: 600 !important;
-        text-align: left !important;
-        padding: 0 1.2rem !important;
-        width: 100% !important;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+    }
+    [data-testid="stVerticalBlock"] [data-testid="stButton"]:first-of-type button {
+        background: linear-gradient(135deg,#1a5c35,#2d8a52) !important;
+        color: #fff !important;
+        border: none !important;
+        box-shadow: 0 4px 14px rgba(26,92,53,0.35) !important;
     }
     </style>
     """, unsafe_allow_html=True)
 
-    st.markdown('<div style="background:#0f2218;padding:0 1.5rem 2rem;">', unsafe_allow_html=True)
+    st.markdown('<div style="padding:0 1.4rem 1.4rem;background:#f7f8f5;">', unsafe_allow_html=True)
 
-    if st.button("Farmer Portal", key="go_farmer", type="primary",
-                  use_container_width=True):
+    if st.button("Farmer Portal  —  Submit photos, get recommendations",
+                 key="go_farmer", type="primary", use_container_width=True):
         st.session_state.role = "farmer"
         st.rerun()
-
     st.markdown('<div style="height:6px;"></div>', unsafe_allow_html=True)
-
-    if st.button("Scientist Portal", key="go_scientist",
-                  use_container_width=True):
+    if st.button("Scientist Portal  —  Review reports, issue recommendations",
+                 key="go_scientist", use_container_width=True):
         st.session_state.role = "scientist"
         st.rerun()
-
     st.markdown('<div style="height:6px;"></div>', unsafe_allow_html=True)
-
-    if st.button("Administrator", key="go_admin", use_container_width=True):
+    if st.button("Administrator  —  Manage platform, farms and users",
+                 key="go_admin", use_container_width=True):
         st.session_state.role = "admin"
         st.rerun()
 
+    st.markdown("</div>", unsafe_allow_html=True)
     st.markdown("""
-    </div>
-    <div style="background:#0f2218;padding:0.8rem 1.5rem 1.5rem;
-                font-size:0.65rem;color:#2a4a36;text-align:center;
-                font-family:'IBM Plex Mono',monospace;letter-spacing:0.08em;">
-        agriexpert.in  ·  Crop Diagnostics Platform  ·  Free during launch
+    <div style="background:#f7f8f5;text-align:center;padding:1rem 0 1.5rem;
+                font-size:0.6rem;color:#b0c8b8;letter-spacing:0.1em;">
+        AGRIEXPERT.IN &nbsp;·&nbsp; IDUKKI, KERALA
     </div>
     """, unsafe_allow_html=True)
 
